@@ -33,7 +33,7 @@ def test_rejects_an_invalid_base_url(tmp_path: Path) -> None:
 @pytest.mark.unit
 @pytest.mark.parametrize(
     ("original", "unsafe"),
-    [("tests/e2e", "../outside"), ("artifacts/runs", "/tmp/runs")],
+    [("tests/example_project", "../outside"), ("artifacts/runs", "/tmp/runs")],
 )
 def test_rejects_unsafe_configured_paths(tmp_path: Path, original: str, unsafe: str) -> None:
     config_file = tmp_path / "invalid.yaml"

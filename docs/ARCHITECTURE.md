@@ -8,7 +8,7 @@ The suite separates reusable quality-engineering capabilities from client-specif
 
 ### 1. Core QA engine
 
-Owns typed configuration, secret resolution, safe paths, fixtures, browser lifecycle, assertions, logging, evidence capture, network and console monitoring, and scoring. Milestone 1 includes the first four foundations; the browser-facing components arrive incrementally.
+Owns typed configuration, secret resolution, safe paths, fixtures, browser lifecycle, assertions, logging, evidence capture, and network/console monitoring. Browser profiles run in isolated Pytest subprocesses so one failed browser cannot contaminate another profile.
 
 ### 2. Reusable test packs
 
@@ -41,6 +41,12 @@ Client configuration and flows
 ```
 
 The core must not import client-specific code. Reports consume structured results rather than browser objects so that browser, API, workflow, and future agent evaluations can share the same reporting layer.
+
+## Run lifecycle
+
+`ai-qa test` validates the project configuration, creates an immutable run ID, and starts one Pytest process per selected browser profile. Pytest Playwright owns browser isolation and retains screenshots, traces, and video according to the evidence policy. The AI QA plugin writes normalized diagnostics and a versioned `run.json` before the process exits.
+
+An unreachable environment or HTTP 5xx during guarded navigation marks the run `incomplete`; it is not silently converted into a product defect.
 
 ## Configuration boundary
 

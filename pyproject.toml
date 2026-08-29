@@ -17,15 +17,17 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+    "playwright>=1.50,<2.0",
     "pydantic>=2.10,<3.0",
     "python-dotenv>=1.0,<2.0",
+    "pytest>=8.0,<10.0",
+    "pytest-playwright>=0.7,<1.0",
     "PyYAML>=6.0,<7.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "mypy>=1.15,<2.0",
-    "pytest>=8.0,<10.0",
     "pytest-cov>=6.0,<8.0",
     "ruff>=0.11,<1.0",
     "types-PyYAML>=6.0,<7.0",
@@ -49,16 +51,19 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-fail-under=85",
 ]
-testpaths = ["tests"]
+testpaths = ["tests/unit", "tests/integration"]
 markers = [
     "unit: fast tests for individual components",
     "integration: tests that cross component boundaries",
     "e2e: browser or API journeys against a running application",
+    "full: complete project coverage for the primary browser profile",
+    "smoke: critical happy-path coverage for every browser profile",
 ]
 
 [tool.coverage.run]
 branch = true
 source = ["ai_qa_engineering"]
+omit = ["src/ai_qa_engineering/pytest_plugin.py"]
 
 [tool.coverage.report]
 show_missing = true

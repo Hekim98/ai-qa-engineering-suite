@@ -2,7 +2,7 @@ project:
   name: demo-ai-app
   base_url: https://example.com
   environment: staging
-  tests_path: tests/e2e
+  tests_path: tests/example_project
 
 credentials:
   username_env: AI_QA_TEST_USER_EMAIL

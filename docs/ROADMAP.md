@@ -2,7 +2,7 @@
 
 The roadmap deliberately validates a service before attempting a SaaS platform.
 
-## Milestone 1 — Foundation (current)
+## Milestone 1 — Foundation
 
 - [x] Installable `src/` package structure
 - [x] Architecture and quality documentation
@@ -15,11 +15,12 @@ Exit condition: a clean checkout can install dependencies, validate the example 
 
 ## Milestone 2 — Browser automation core
 
-- [ ] Playwright and Pytest integration
-- [ ] Browser/context/page fixtures
-- [ ] Screenshot, trace, and video capture
-- [ ] Console and network error collection
-- [ ] First reusable smoke-test pack
+- [x] Playwright and Pytest integration
+- [x] Browser-profile execution and isolated run directories
+- [x] Screenshot, trace, and video evidence policies
+- [x] Console and network error collection
+- [x] Structured `run.json` output and incomplete-run classification
+- [x] First reusable page-health smoke pack
 
 Exit condition: one command runs a documented smoke journey and preserves useful failure evidence.
 

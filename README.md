@@ -18,7 +18,7 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 1 establishes an installable Python package, typed project configuration, secret resolution, repository-safe paths, logging, and automated quality gates. Browser automation is intentionally deferred to Milestone 2 so each layer can be reviewed before the next one is added.
+Milestone 2 adds the reusable Playwright execution engine: isolated run directories, browser profiles, failure evidence, console/network diagnostics, and structured run summaries.
 
 ```text
 Core QA Engine
@@ -53,6 +53,7 @@ Python 3.11 or newer is recommended.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
+python -m playwright install chromium
 cp .env.example .env
 pytest
 ```
@@ -62,6 +63,14 @@ Load and inspect the example project configuration:
 ```bash
 ai-qa validate configs/example.yaml
 ```
+
+Run one configured browser profile:
+
+```bash
+ai-qa test configs/example.yaml --profile desktop-chromium
+```
+
+Each execution writes an ignored directory below `artifacts/runs/` containing logs, browser evidence, observability records, and a machine-readable `run.json`.
 
 Run all local quality gates:
 
