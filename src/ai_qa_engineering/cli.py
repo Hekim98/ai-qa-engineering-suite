@@ -9,6 +9,8 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from ai_qa_engineering.config import ConfigError, QAConfig, load_config
+from ai_qa_engineering.reporting import generate_report_outputs
+from ai_qa_engineering.reporting.loader import ReportInputError
 from ai_qa_engineering.runner import execute_profiles
 
 
@@ -26,6 +28,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     test_parser.add_argument("config", type=Path)
     test_parser.add_argument("--profile", action="append", dest="profiles")
+
+    report_parser = subparsers.add_parser(
+        "report", description="Generate verified HTML and PDF launch-readiness reports"
+    )
+    report_parser.add_argument("run_directory", type=Path)
+    report_parser.add_argument("--findings", type=Path, required=True)
     return parser
 
 
@@ -59,7 +67,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (ConfigError, ValueError) as exc:
             print(str(exc), file=sys.stderr)
             return 2
-        payload = [
+        test_payload = [
             {
                 "profile": execution.profile,
                 "status": execution.status,
@@ -67,8 +75,24 @@ def main(argv: Sequence[str] | None = None) -> int:
             }
             for execution in executions
         ]
-        print(json.dumps(payload, indent=2))
+        print(json.dumps(test_payload, indent=2))
         return max((execution.exit_code for execution in executions), default=0)
+
+    if args.command == "report":
+        try:
+            outputs = generate_report_outputs(args.run_directory, args.findings)
+        except (ReportInputError, OSError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        report_payload = {
+            "status": outputs.report.audit_status,
+            "score": outputs.report.score,
+            "recommendation": outputs.report.recommendation,
+            "html": str(outputs.html_path),
+            "pdf": str(outputs.pdf_path),
+        }
+        print(json.dumps(report_payload, indent=2))
+        return 0
 
     parser.error(f"Unsupported command: {args.command}")
     return 2

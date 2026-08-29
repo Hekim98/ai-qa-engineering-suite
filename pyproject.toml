@@ -18,19 +18,23 @@ classifiers = [
 ]
 dependencies = [
     "playwright>=1.50,<2.0",
+    "Pillow>=10.0,<13.0",
     "pydantic>=2.10,<3.0",
     "python-dotenv>=1.0,<2.0",
     "pytest>=8.0,<10.0",
     "pytest-playwright>=0.7,<1.0",
     "PyYAML>=6.0,<7.0",
+    "reportlab>=4.2,<5.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "mypy>=1.15,<2.0",
     "pytest-cov>=6.0,<8.0",
+    "pypdf>=5.0,<7.0",
     "ruff>=0.11,<1.0",
     "types-PyYAML>=6.0,<7.0",
+    "types-reportlab>=4.4,<5.0",
 ]
 
 [project.scripts]
@@ -76,6 +80,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["B", "E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/ai_qa_engineering/reporting/html_report.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
