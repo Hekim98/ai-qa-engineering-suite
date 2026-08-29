@@ -1,0 +1,45 @@
+project:
+  name: demo-ai-app
+  base_url: https://example.com
+  environment: staging
+  tests_path: tests/e2e
+
+credentials:
+  username_env: AI_QA_TEST_USER_EMAIL
+  password_env: AI_QA_TEST_USER_PASSWORD
+
+browser:
+  profiles:
+    desktop-chromium:
+      engine: chromium
+      suite: full
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    mobile-chromium:
+      engine: chromium
+      suite: smoke
+      viewport:
+        width: 390
+        height: 844
+      mobile: true
+
+artifacts:
+  root_dir: artifacts/runs
+  screenshot: on-failure
+  video: on-failure
+  trace: on-failure
+
+network:
+  capture_console_errors: true
+  capture_failed_requests: true
+  allowlist: []
+
+critical_flows:
+  - id: AUTH-001
+    name: Visitor can reach signup
+    description: A new visitor can navigate from the landing page to signup.
+  - id: AUTH-002
+    name: Registered user can log in
+    description: A registered test user can access the application.
