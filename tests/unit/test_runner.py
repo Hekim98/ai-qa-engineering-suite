@@ -29,10 +29,32 @@ def test_build_command_maps_profile_and_evidence_policies(tmp_path: Path) -> Non
 
     assert command[0]
     assert command[command.index("--browser") + 1] == "chromium"
+    assert command[command.index("--base-url") + 1] == "https://example.com/"
     assert command[command.index("-m", 4) + 1] == "full"
     assert command[command.index("--screenshot") + 1] == "only-on-failure"
     assert command[command.index("--video") + 1] == "retain-on-failure"
     assert command[command.index("--tracing") + 1] == "retain-on-failure"
+
+
+@pytest.mark.unit
+def test_build_command_isolates_detection_demo_marker(tmp_path: Path) -> None:
+    config = load_config("configs/saucedemo.yaml")
+    paths = RunPaths.create(
+        repository_root=tmp_path,
+        artifact_root="artifacts/runs",
+        project=config.project.name,
+        profile="detection-chromium",
+        now=datetime(2026, 8, 28, tzinfo=UTC),
+    )
+
+    command = build_pytest_command(
+        config_path=Path("configs/saucedemo.yaml"),
+        config=config,
+        profile_name="detection-chromium",
+        paths=paths,
+    )
+
+    assert command[command.index("-m", 4) + 1] == "detection_demo"
 
 
 @pytest.mark.unit

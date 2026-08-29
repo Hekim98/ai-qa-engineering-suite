@@ -23,6 +23,7 @@ class BrowserEngine(StrEnum):
 class SuiteLevel(StrEnum):
     FULL = "full"
     SMOKE = "smoke"
+    DETECTION_DEMO = "detection_demo"
 
 
 class EvidencePolicy(StrEnum):

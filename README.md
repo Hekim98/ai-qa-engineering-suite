@@ -18,7 +18,7 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 2 adds the reusable Playwright execution engine: isolated run directories, browser profiles, failure evidence, console/network diagnostics, and structured run summaries.
+Milestone 3 completes the first portfolio audit against SauceDemo: full Chromium desktop coverage, Chromium mobile and Firefox/WebKit smoke coverage, verified findings, a manual exploratory checklist, and a separate seeded-defect Detection Demonstration.
 
 ```text
 Core QA Engine
@@ -39,8 +39,9 @@ Professional Launch Report
 ```text
 src/ai_qa_engineering/   Installable reusable QA package
 configs/                 Example and shared configuration contracts
+audits/                  Verified findings and exploratory audit records
 docs/                    Architecture, roadmap, and quality standards
-tests/                   Automated tests for the package itself
+tests/                   Framework tests and client-specific audit suites
 artifacts/runs/          Generated run evidence (not committed)
 output/                  Final HTML/PDF portfolio deliverables
 ```
@@ -53,7 +54,7 @@ Python 3.11 or newer is recommended.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
-python -m playwright install chromium
+python -m playwright install chromium firefox webkit
 cp .env.example .env
 pytest
 ```
@@ -71,6 +72,21 @@ ai-qa test configs/example.yaml --profile desktop-chromium
 ```
 
 Each execution writes an ignored directory below `artifacts/runs/` containing logs, browser evidence, observability records, and a machine-readable `run.json`.
+
+## SauceDemo portfolio audit
+
+SauceDemo publishes its test personas on the login page. Configure the standard readiness persona locally:
+
+```bash
+export SAUCEDEMO_USERNAME=standard_user
+export SAUCEDEMO_PASSWORD=secret_sauce
+ai-qa validate configs/saucedemo.yaml
+ai-qa test configs/saucedemo.yaml
+```
+
+The standard-user readiness suite and intentionally faulty `problem_user` profile are separate. Detection Demonstration findings never affect readiness scoring.
+
+Verified audit inputs are stored in [audits/saucedemo](audits/saucedemo). Public-site CI is defined only as a manually started GitHub Actions workflow, so normal pushes never send traffic to SauceDemo.
 
 Run all local quality gates:
 

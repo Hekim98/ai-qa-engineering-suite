@@ -1,0 +1,56 @@
+audit:
+  project: SauceDemo
+  target: https://www.saucedemo.com
+  executed_at_utc: 2026-08-29T06:20:03Z
+  status: complete-with-findings
+  readiness_scope: standard_user
+  score_status: pending-report-engine
+
+browser_matrix:
+  - profile: desktop-chromium
+    viewport: 1440x900
+    suite: full
+    result: 10 passed, 3 failed
+    run: artifacts/runs/20260829T062003Z-saucedemo-desktop-chromium
+  - profile: mobile-chromium
+    viewport: 390x844
+    suite: smoke
+    result: 2 passed
+    run: artifacts/runs/20260829T061831Z-saucedemo-mobile-chromium
+  - profile: desktop-firefox
+    viewport: 1440x900
+    suite: smoke
+    result: 2 passed
+    run: artifacts/runs/20260829T061916Z-saucedemo-desktop-firefox
+  - profile: desktop-webkit
+    viewport: 1440x900
+    suite: smoke
+    result: 2 passed
+    run: artifacts/runs/20260829T061919Z-saucedemo-desktop-webkit
+  - profile: detection-chromium
+    viewport: 1440x900
+    suite: detection-demonstration
+    result: 1 detection confirmed
+    run: artifacts/runs/20260829T061922Z-saucedemo-detection-chromium
+
+critical_flows:
+  AUTH-001: passed
+  CATALOG-001: passed-with-findings
+  CART-001: passed-with-network-finding
+  CHECKOUT-001: passed
+  SESSION-001: passed
+
+readiness_findings:
+  Critical: 0
+  Major: 1
+  Minor: 3
+
+detection_demonstration:
+  findings: 1
+  affects_readiness: false
+
+limitations:
+  - This audit covers the public demo environment and its published test personas only.
+  - Accessibility coverage is a semantic and keyboard smoke assessment, not a WCAG conformance audit.
+  - Security, load, backend API, payment integration, and assistive-technology testing are outside scope.
+  - events.backtrace.io placeholder telemetry is allowlisted as non-blocking third-party demo noise.

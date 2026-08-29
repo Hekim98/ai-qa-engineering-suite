@@ -1,0 +1,46 @@
+audit: SauceDemo Launch Readiness
+auditor: AI QA Engineering Suite
+scope: standard_user readiness unless explicitly marked detection-demonstration
+checks:
+  - id: UX-001
+    area: navigation
+    check: Login, inventory, cart, checkout, and logout labels are understandable.
+    method: manual
+    status: verified-pass
+    notes: Labels and progression were understandable across the standard purchase journey.
+  - id: UX-002
+    area: responsive
+    check: Core content remains usable without horizontal scrolling at 390x844.
+    method: manual-and-automated
+    status: verified-warning
+    notes: No horizontal overflow was found, but large empty card areas make the mobile catalog 5,349 pixels tall.
+  - id: A11Y-001
+    area: keyboard
+    check: Login and purchase controls can be reached and operated using the keyboard.
+    method: manual-and-automated
+    status: verified-fail
+    notes: Login order and add-to-cart activation work, but the cart link cannot receive keyboard focus.
+  - id: A11Y-002
+    area: semantics
+    check: Authenticated pages expose a main landmark and one level-one heading.
+    method: automated
+    status: verified-fail
+    notes: The inventory page exposes neither a main landmark nor a level-one heading.
+  - id: ERR-001
+    area: error-messages
+    check: Invalid login, locked account, and incomplete checkout states explain recovery.
+    method: manual-and-automated
+    status: verified-pass
+    notes: Invalid login, locked user, and all required checkout fields provide specific messages.
+  - id: EDGE-001
+    area: state
+    check: Cart state remains consistent after reload, removal, and navigation.
+    method: manual-and-automated
+    status: verified-pass-with-observation
+    notes: Cart contents persist, but reloading inventory returns HTTP 404 and logs a console error.
+  - id: DET-001
+    area: detection-demonstration
+    check: The problem_user persona exposes seeded product-image defects.
+    method: automated
+    status: verified-detected
+    notes: All six problem_user products reuse the same dog image; this is excluded from readiness.

@@ -26,10 +26,12 @@ Exit condition: one command runs a documented smoke journey and preserves useful
 
 ## Milestone 3 — Sample audit
 
-- [ ] Select a representative AI-built demo application
-- [ ] Define client-specific critical flows
-- [ ] Run automated and exploratory QA
-- [ ] Record structured defects with evidence
+- [x] Select SauceDemo as the stable public portfolio target
+- [x] Define authentication, catalog, cart, checkout, and session critical flows
+- [x] Run Chromium desktop/mobile and Firefox/WebKit audit profiles
+- [x] Complete responsive, keyboard, error-message, UX, and edge-case checks
+- [x] Record verified readiness findings with failure evidence
+- [x] Isolate the `problem_user` Detection Demonstration from readiness
 
 Exit condition: verified findings are complete enough to support a client-quality report.
 

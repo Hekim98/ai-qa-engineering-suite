@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import BrowserContext, Page
 
 from ai_qa_engineering.config import BrowserProfile, QAConfig, load_config
 from ai_qa_engineering.observability import BrowserObserver
 from ai_qa_engineering.results import RunResult, RunStatus, TestOutcome, TestResult
+from ai_qa_engineering.secrets import ResolvedCredentials, resolve_credentials
 
 
 @dataclass
@@ -64,15 +65,32 @@ def qa_profile(pytestconfig: pytest.Config, qa_config: QAConfig) -> BrowserProfi
 
 
 @pytest.fixture(scope="session")
-def browser_context_args(qa_profile: BrowserProfile) -> dict[str, Any]:
-    return {
-        "viewport": {
+def qa_credentials(qa_config: QAConfig) -> ResolvedCredentials:
+    """Resolve the configured account without exposing secret values to tests or logs."""
+    return resolve_credentials(qa_config.credentials)
+
+
+@pytest.fixture(scope="session")
+def qa_run_dir(pytestconfig: pytest.Config) -> Path:
+    """Expose the isolated run directory for explicit audit evidence."""
+    return Path(_required_option(pytestconfig, "--ai-qa-run-dir"))
+
+
+@pytest.fixture
+def qa_page(
+    new_context: Callable[..., BrowserContext],
+    qa_profile: BrowserProfile,
+) -> Generator[Page, None, None]:
+    """Create a profile-sized page through pytest-playwright's managed context factory."""
+    context = new_context(
+        viewport={
             "width": qa_profile.viewport.width,
             "height": qa_profile.viewport.height,
         },
-        "is_mobile": qa_profile.mobile,
-        "has_touch": qa_profile.mobile,
-    }
+        is_mobile=qa_profile.mobile,
+        has_touch=qa_profile.mobile,
+    )
+    yield context.new_page()
 
 
 def _safe_test_name(nodeid: str) -> str:
@@ -81,13 +99,17 @@ def _safe_test_name(nodeid: str) -> str:
 
 @pytest.fixture
 def browser_observer(
-    page: Page,
+    qa_page: Page,
     qa_config: QAConfig,
     request: pytest.FixtureRequest,
     pytestconfig: pytest.Config,
 ) -> Generator[BrowserObserver, None, None]:
-    observer = BrowserObserver(qa_config.network.allowlist)
-    observer.attach(page)
+    observer = BrowserObserver(
+        qa_config.network.allowlist,
+        capture_console_errors=qa_config.network.capture_console_errors,
+        capture_failed_requests=qa_config.network.capture_failed_requests,
+    )
+    observer.attach(qa_page)
     yield observer
 
     run_dir = Path(_required_option(pytestconfig, "--ai-qa-run-dir"))

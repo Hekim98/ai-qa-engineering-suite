@@ -10,8 +10,16 @@ from ai_qa_engineering.results import ConsoleRecord, NetworkRecord
 class BrowserObserver:
     """Capture browser diagnostics while respecting a configured allowlist."""
 
-    def __init__(self, allowlist: tuple[str, ...] = ()) -> None:
+    def __init__(
+        self,
+        allowlist: tuple[str, ...] = (),
+        *,
+        capture_console_errors: bool = True,
+        capture_failed_requests: bool = True,
+    ) -> None:
         self.allowlist = allowlist
+        self.capture_console_errors = capture_console_errors
+        self.capture_failed_requests = capture_failed_requests
         self.console_errors: list[ConsoleRecord] = []
         self.failed_requests: list[NetworkRecord] = []
 
@@ -19,7 +27,11 @@ class BrowserObserver:
         return any(token in value for token in self.allowlist)
 
     def record_console(self, *, level: str, text: str, url: str | None = None) -> None:
-        if level != "error" or self._allowed(f"{url or ''} {text}"):
+        if (
+            not self.capture_console_errors
+            or level != "error"
+            or self._allowed(f"{url or ''} {text}")
+        ):
             return
         self.console_errors.append(ConsoleRecord(level=level, text=text, url=url))
 
@@ -31,7 +43,7 @@ class BrowserObserver:
         reason: str,
         status: int | None = None,
     ) -> None:
-        if self._allowed(url):
+        if not self.capture_failed_requests or self._allowed(url):
             return
         self.failed_requests.append(
             NetworkRecord(url=url, method=method, reason=reason, status=status)
@@ -41,6 +53,22 @@ class BrowserObserver:
         page.on("console", self._on_console)
         page.on("requestfailed", self._on_request_failed)
         page.on("response", self._on_response)
+
+    def discard_expected(self, token: str) -> None:
+        """Remove failures produced deliberately by a negative-path test."""
+        self.console_errors[:] = [
+            record
+            for record in self.console_errors
+            if token not in f"{record.url or ''} {record.text}"
+        ]
+        self.failed_requests[:] = [
+            record for record in self.failed_requests if token not in record.url
+        ]
+
+    def allow_expected(self, token: str) -> None:
+        """Ignore current and later browser events caused by an intentional failure path."""
+        self.allowlist = (*self.allowlist, token)
+        self.discard_expected(token)
 
     def _on_console(self, message: ConsoleMessage) -> None:
         location = message.location

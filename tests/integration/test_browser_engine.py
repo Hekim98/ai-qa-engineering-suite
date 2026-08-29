@@ -4,6 +4,8 @@ import pytest
 from playwright.sync_api import Playwright
 
 from ai_qa_engineering.observability import BrowserObserver
+from ai_qa_engineering.results import RunStatus
+from ai_qa_engineering.runner import execute_profiles
 from ai_qa_engineering.testpacks import assert_basic_page_health
 
 
@@ -39,3 +41,15 @@ def test_local_browser_captures_evidence_and_network_failure(
     assert (tmp_path / "trace.zip").stat().st_size > 0
     assert any(video_dir.glob("*.webm"))
     assert [record.url for record in observer.failed_requests] == ["https://example.test/broken"]
+
+
+@pytest.mark.integration
+def test_profile_runner_applies_configured_viewport() -> None:
+    execution = execute_profiles(
+        "configs/example.yaml",
+        profile_names=["desktop-chromium"],
+    )[0]
+
+    assert execution.status is RunStatus.PASSED
+    assert execution.exit_code == 0
+    assert (execution.run_dir / "run.json").is_file()

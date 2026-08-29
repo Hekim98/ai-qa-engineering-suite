@@ -58,6 +58,7 @@ markers = [
     "e2e: browser or API journeys against a running application",
     "full: complete project coverage for the primary browser profile",
     "smoke: critical happy-path coverage for every browser profile",
+    "detection_demo: intentionally faulty personas used only to demonstrate detection",
 ]
 
 [tool.coverage.run]

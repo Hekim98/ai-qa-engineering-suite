@@ -1,0 +1,56 @@
+name: SauceDemo audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-demo-audit:
+    name: ${{ matrix.profile }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: desktop-chromium
+            browser: chromium
+          - profile: mobile-chromium
+            browser: chromium
+          - profile: desktop-firefox
+            browser: firefox
+          - profile: desktop-webkit
+            browser: webkit
+          - profile: detection-chromium
+            browser: chromium
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Install selected browser
+        run: python -m playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run selected SauceDemo audit profile
+        run: ai-qa test configs/saucedemo.yaml --profile ${{ matrix.profile }}
+        env:
+          SAUCEDEMO_USERNAME: standard_user
+          SAUCEDEMO_PASSWORD: secret_sauce
+
+      - name: Preserve audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saucedemo-${{ matrix.profile }}
+          path: artifacts/runs/
+          if-no-files-found: error

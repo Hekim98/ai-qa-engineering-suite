@@ -1,0 +1,93 @@
+findings:
+  - id: SD-A11Y-001
+    title: Inventory lacks primary semantic landmarks
+    severity: Minor
+    category: accessibility-smoke
+    source: automated
+    environment: public-demo
+    browser/device: Chromium desktop 1440x900
+    steps:
+      - Log in as standard_user.
+      - Open the product inventory.
+      - Inspect the document landmarks and heading hierarchy.
+    expected: The inventory exposes exactly one main landmark and one level-one heading.
+    actual: The page exposes no main landmark and no level-one heading.
+    evidence:
+      - artifacts/runs/20260829T062003Z-saucedemo-desktop-chromium/test-results/tests-saucedemo-test-accessibility-py-test-inventory-has-basic-semantic-landmarks-chromium/test-failed-1.png
+      - artifacts/runs/20260829T062003Z-saucedemo-desktop-chromium/test-results/tests-saucedemo-test-accessibility-py-test-inventory-has-basic-semantic-landmarks-chromium/trace.zip
+    recommendation: Wrap primary inventory content in a main landmark and expose Products as the page H1.
+    status: verified
+
+  - id: SD-A11Y-002
+    title: Cart link cannot receive keyboard focus
+    severity: Major
+    category: accessibility-smoke
+    source: automated-and-manual
+    environment: public-demo
+    browser/device: Chromium desktop 1440x900
+    steps:
+      - Log in as standard_user.
+      - Add a product using the keyboard.
+      - Attempt to focus and activate the cart link using the keyboard.
+    expected: The cart control participates in focus order and opens the cart when activated.
+    actual: Add to cart supports keyboard activation, but the cart link remains unfocused and cannot be keyboard-activated.
+    evidence:
+      - artifacts/runs/20260829T062003Z-saucedemo-desktop-chromium/test-results/tests-saucedemo-test-authentication-py-test-inventory-primary-controls-support-keyboard-activation-chromium/test-failed-1.png
+      - artifacts/runs/20260829T062003Z-saucedemo-desktop-chromium/test-results/tests-saucedemo-test-authentication-py-test-inventory-primary-controls-support-keyboard-activation-chromium/trace.zip
+    recommendation: Render the cart as a real anchor with href or an equivalent keyboard-focusable control with correct semantics.
+    status: verified
+
+  - id: SD-NET-001
+    title: Reloading inventory returns HTTP 404
+    severity: Minor
+    category: network-health
+    source: automated
+    environment: public-demo
+    browser/device: Chromium desktop 1440x900
+    steps:
+      - Log in as standard_user.
+      - Add two products to the cart.
+      - Reload inventory.html.
+      - Inspect the response and browser console.
+    expected: The active application route reloads with HTTP 200 and no console error.
+    actual: Inventory remains usable and cart state persists, but the document response is HTTP 404 and produces a console error.
+    evidence:
+      - artifacts/runs/20260829T062003Z-saucedemo-desktop-chromium/observability/tests-saucedemo-test_inventory_cart.py-test_cart_state_survives_reload_and_remove-chromium.json
+      - artifacts/runs/20260829T062003Z-saucedemo-desktop-chromium/test-results/tests-saucedemo-test-inventory-cart-py-test-cart-state-survives-reload-and-remove-chromium/trace.zip
+    recommendation: Configure the host to serve the application shell with HTTP 200 for supported client-side routes.
+    status: verified
+
+  - id: SD-RESP-001
+    title: Mobile product cards contain excessive vertical whitespace
+    severity: Minor
+    category: responsive
+    source: manual
+    environment: public-demo
+    browser/device: Chromium mobile 390x844
+    steps:
+      - Log in as standard_user at a 390x844 viewport.
+      - Scroll through all six inventory products.
+      - Compare the description, price, and action spacing within each card.
+    expected: Mobile cards keep related content compact enough for efficient catalog scanning.
+    actual: Large empty areas separate descriptions from prices and actions, expanding the six-product page to 5,349 pixels.
+    evidence:
+      - artifacts/runs/20260829T061831Z-saucedemo-mobile-chromium/test-results/mobile-inventory-responsive.png
+    recommendation: Remove fixed or oversized card heights on narrow screens and let cards size to their content.
+    status: verified
+
+  - id: SD-DEMO-001
+    title: Problem user reuses one incorrect image for every product
+    severity: Major
+    category: content-integrity
+    source: detection-demonstration
+    environment: public-demo
+    browser/device: Chromium desktop 1440x900
+    steps:
+      - Log in as problem_user.
+      - Compare the six inventory product images.
+    expected: Each product displays its corresponding product image.
+    actual: All six products display the same dog image.
+    evidence:
+      - artifacts/runs/20260829T061922Z-saucedemo-detection-chromium/test-results/detection-problem-user-images.png
+    recommendation: Preserve this seeded persona for detection demonstrations; do not include it in standard-user readiness scoring.
+    status: verified

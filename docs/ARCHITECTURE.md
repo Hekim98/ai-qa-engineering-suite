@@ -44,13 +44,19 @@ The core must not import client-specific code. Reports consume structured result
 
 ## Run lifecycle
 
-`ai-qa test` validates the project configuration, creates an immutable run ID, and starts one Pytest process per selected browser profile. Pytest Playwright owns browser isolation and retains screenshots, traces, and video according to the evidence policy. The AI QA plugin writes normalized diagnostics and a versioned `run.json` before the process exits.
+`ai-qa test` validates the project configuration, creates an immutable run ID, and starts one Pytest process per selected browser profile. The engine's `qa_page` fixture creates a profile-sized page through Pytest Playwright's managed `new_context` factory, preserving official screenshot, trace, and video retention while applying the exact configured viewport. The AI QA plugin writes normalized diagnostics and a versioned `run.json` before the process exits.
 
 An unreachable environment or HTTP 5xx during guarded navigation marks the run `incomplete`; it is not silently converted into a product defect.
 
 ## Configuration boundary
 
 `configs/example.yaml` documents the first public configuration contract. Pydantic rejects unknown or invalid input before any test run starts. Configuration stores only the names of credential environment variables; their values come from the process environment or an ignored local `.env` file.
+
+## Portfolio audit boundary
+
+`configs/saucedemo.yaml` and `tests/saucedemo/` form the first client layer. Full readiness uses `standard_user`; the intentionally faulty `problem_user` is selected only by a dedicated `detection_demo` profile. Source classification keeps seeded demonstration findings out of readiness scoring.
+
+The external-site workflow uses `workflow_dispatch` only. Push and pull-request quality checks run local fixtures and framework tests without contacting SauceDemo.
 
 ## Planned result model
 

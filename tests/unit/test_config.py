@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from ai_qa_engineering.config import ConfigError, EvidencePolicy, load_config
+from ai_qa_engineering.config import ConfigError, EvidencePolicy, SuiteLevel, load_config
 
 
 @pytest.mark.unit
@@ -14,6 +14,15 @@ def test_loads_example_configuration() -> None:
     assert config.browser.profiles["desktop-chromium"].engine == "chromium"
     assert config.artifacts.screenshot is EvidencePolicy.ON_FAILURE
     assert [flow.id for flow in config.critical_flows] == ["AUTH-001", "AUTH-002"]
+
+
+@pytest.mark.unit
+def test_loads_saucedemo_audit_profiles() -> None:
+    config = load_config(Path("configs/saucedemo.yaml"))
+
+    assert config.browser.profiles["mobile-chromium"].viewport.width == 390
+    assert config.browser.profiles["detection-chromium"].suite is SuiteLevel.DETECTION_DEMO
+    assert len(config.critical_flows) == 5
 
 
 @pytest.mark.unit

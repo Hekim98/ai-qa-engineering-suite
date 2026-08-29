@@ -44,7 +44,7 @@ def build_pytest_command(
     paths: RunPaths,
 ) -> list[str]:
     profile = config.browser.profiles[profile_name]
-    marker = "full" if profile.suite == "full" else "smoke"
+    marker = profile.suite.value
     return [
         sys.executable,
         "-m",
@@ -57,6 +57,8 @@ def build_pytest_command(
         marker,
         "--browser",
         profile.engine,
+        "--base-url",
+        str(config.project.base_url),
         "--ai-qa-config",
         str(config_path),
         "--ai-qa-profile",

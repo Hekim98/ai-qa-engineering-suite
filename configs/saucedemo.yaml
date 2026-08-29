@@ -1,0 +1,76 @@
+project:
+  name: saucedemo
+  base_url: https://www.saucedemo.com
+  environment: public-demo
+  tests_path: tests/saucedemo
+
+credentials:
+  username_env: SAUCEDEMO_USERNAME
+  password_env: SAUCEDEMO_PASSWORD
+
+browser:
+  profiles:
+    desktop-chromium:
+      engine: chromium
+      suite: full
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    mobile-chromium:
+      engine: chromium
+      suite: smoke
+      viewport:
+        width: 390
+        height: 844
+      mobile: true
+    desktop-firefox:
+      engine: firefox
+      suite: smoke
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    desktop-webkit:
+      engine: webkit
+      suite: smoke
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    detection-chromium:
+      engine: chromium
+      suite: detection_demo
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+
+artifacts:
+  root_dir: artifacts/runs
+  screenshot: on-failure
+  video: on-failure
+  trace: on-failure
+
+network:
+  capture_console_errors: true
+  capture_failed_requests: true
+  allowlist:
+    - events.backtrace.io
+
+critical_flows:
+  - id: AUTH-001
+    name: Standard user can log in
+    description: A valid standard user reaches the product inventory.
+  - id: CATALOG-001
+    name: Shopper can review and sort inventory
+    description: Product inventory is visible and can be sorted by name and price.
+  - id: CART-001
+    name: Cart state remains accurate
+    description: Added and removed products remain consistent across navigation and reloads.
+  - id: CHECKOUT-001
+    name: Shopper can complete checkout
+    description: A standard user can validate details and complete a purchase.
+  - id: SESSION-001
+    name: Logout protects the authenticated session
+    description: Logging out returns the user to login and protects inventory routes.
