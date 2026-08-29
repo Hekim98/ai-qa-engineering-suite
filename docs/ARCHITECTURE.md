@@ -58,9 +58,9 @@ An unreachable environment or HTTP 5xx during guarded navigation marks the run `
 
 The external-site workflow uses `workflow_dispatch` only. Push and pull-request quality checks run local fixtures and framework tests without contacting SauceDemo.
 
-## Planned result model
+## Report data contract
 
-Every finding will eventually carry:
+Every finding carries:
 
 - stable ID and title;
 - severity and affected environment;
@@ -68,3 +68,7 @@ Every finding will eventually carry:
 - expected and actual results;
 - evidence paths and relevant logs;
 - recommendation and verification status.
+
+The report command validates `run.json`, structured findings, and every referenced evidence path before rendering. A single immutable `LaunchReport` model drives both HTML and PDF outputs, preventing scoring or content drift between formats. Seeded `detection-demonstration` findings remain visible in a separate appendix but are excluded from readiness scoring.
+
+Category assessments use PASS=1, WARNING=0.5, and FAIL=0 against weights of 40, 20, 15, 10, 10, and 5. A blocked required assessment suppresses the score and produces an `INCOMPLETE` recommendation. Critical findings or failed critical flows always produce `DO NOT LAUNCH`.

@@ -37,10 +37,10 @@ Exit condition: verified findings are complete enough to support a client-qualit
 
 ## Milestone 4 — Launch QA report
 
-- [ ] Severity model
-- [ ] Launch-readiness scoring model
-- [ ] HTML/PDF report generation
-- [ ] Portfolio-quality sample report
+- [x] Severity model
+- [x] Launch-readiness scoring model
+- [x] HTML/PDF report generation
+- [x] Portfolio-quality sample report
 
 Exit condition: a founder can understand launch risk and recommended next actions without reading test code.
 

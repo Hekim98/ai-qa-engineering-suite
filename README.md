@@ -18,7 +18,7 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 3 completes the first portfolio audit against SauceDemo: full Chromium desktop coverage, Chromium mobile and Firefox/WebKit smoke coverage, verified findings, a manual exploratory checklist, and a separate seeded-defect Detection Demonstration.
+Milestone 4 completes the first portfolio audit against SauceDemo: verified multi-browser results now feed one strict report model that generates matching HTML and PDF launch-readiness reports. The sample audit scored **80/100 — LAUNCH WITH CONDITIONS**.
 
 ```text
 Core QA Engine
@@ -71,6 +71,12 @@ Run one configured browser profile:
 ai-qa test configs/example.yaml --profile desktop-chromium
 ```
 
+Generate both report formats from a completed run and verified findings:
+
+```bash
+ai-qa report artifacts/runs/<run-id> --findings audits/saucedemo/manual-findings.yaml
+```
+
 Each execution writes an ignored directory below `artifacts/runs/` containing logs, browser evidence, observability records, and a machine-readable `run.json`.
 
 ## SauceDemo portfolio audit
@@ -87,6 +93,12 @@ ai-qa test configs/saucedemo.yaml
 The standard-user readiness suite and intentionally faulty `problem_user` profile are separate. Detection Demonstration findings never affect readiness scoring.
 
 Verified audit inputs are stored in [audits/saucedemo](audits/saucedemo). Public-site CI is defined only as a manually started GitHub Actions workflow, so normal pushes never send traffic to SauceDemo.
+
+Portfolio deliverables:
+
+- [Verified sample audit summary](docs/SAMPLE_AUDIT.md)
+- [Self-contained HTML report](output/html/saucedemo-launch-readiness-report.html)
+- [Visually verified PDF report](output/pdf/saucedemo-launch-readiness-report.pdf)
 
 Run all local quality gates:
 
