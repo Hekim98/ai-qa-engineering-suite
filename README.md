@@ -18,7 +18,7 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 4 completes the first portfolio audit against SauceDemo: verified multi-browser results now feed one strict report model that generates matching HTML and PDF launch-readiness reports. The sample audit scored **80/100 — LAUNCH WITH CONDITIONS**.
+Milestone 5 validates whether founders will pay for the service. The campaign uses a fixed-scope founding pilot, a public-source prospect list, measurable conversion thresholds, and an explicit approval gate before any external outreach.
 
 ```text
 Core QA Engine
@@ -99,6 +99,12 @@ Portfolio deliverables:
 - [Verified sample audit summary](docs/SAMPLE_AUDIT.md)
 - [Self-contained HTML report](output/html/saucedemo-launch-readiness-report.html)
 - [Visually verified PDF report](output/pdf/saucedemo-launch-readiness-report.pdf)
+
+Market-validation materials:
+
+- [Pilot experiment and success criteria](docs/MARKET_VALIDATION.md)
+- [Founder outreach messages](outreach/templates.md)
+- [Public-source prospect tracker](outreach/prospects.csv)
 
 Run all local quality gates:
 
