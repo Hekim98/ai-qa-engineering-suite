@@ -1,0 +1,115 @@
+report:
+  title: QA Practice E-commerce Launch Readiness Report
+  project: qa-practice-store
+  target: https://www.qapractice.com/practice-ecommerece-website
+  audit_date: 2026-08-30
+  executive_summary: The catalog, product detail, cart, and dummy checkout work in Chromium desktop and mobile. Launch should not proceed with the declared cross-browser scope because Firefox and WebKit discard shipping-address input and block the critical checkout flow. The page also lacks a main landmark.
+  assessments:
+    - category: core-flows
+      status: WARNING
+      rationale: Catalog, product, and cart flows pass, while checkout succeeds only in Chromium and fails in Firefox and WebKit.
+    - category: reliability-error-handling
+      status: WARNING
+      rationale: Empty-cart protection and published positive data behave consistently in Chromium, but cross-browser address entry is unreliable.
+    - category: ux-content
+      status: PASS
+      rationale: Product discovery, labels, progression, and successful Chromium confirmation are understandable.
+    - category: responsive
+      status: PASS
+      rationale: The 390x844 Chromium journey completes without horizontal overflow after opening the responsive search menu.
+    - category: accessibility-smoke
+      status: FAIL
+      rationale: The page has a meaningful H1 and image alternatives but exposes no main landmark.
+    - category: network-health
+      status: PASS
+      rationale: Verified runs recorded no unexpected first-party console errors or failed requests.
+  critical_flows:
+    - id: CATALOG-001
+      name: Shopper can discover products
+      status: PASS
+      evidence: Search, sort, result count, and pagination passed in Chromium desktop; catalog smoke passed across the matrix.
+    - id: PRODUCT-001
+      name: Shopper can review product details
+      status: PASS
+      evidence: Wireless Mouse detail exposed its description, price, and add-to-cart action.
+    - id: CART-001
+      name: Shopper can manage the cart
+      status: PASS
+      evidence: Quantity count, removal, and empty-cart checkout protection passed.
+    - id: CHECKOUT-001
+      name: Shopper can complete the demo checkout
+      status: FAIL
+      evidence: Chromium desktop/mobile completed, but Firefox and WebKit could not retain address input or reach payment.
+    - id: RESPONSIVE-001
+      name: Critical shopping controls remain usable on mobile
+      status: PASS
+      evidence: Mobile Chromium catalog, responsive controls, and dummy checkout passed at 390x844.
+  browser_coverage:
+    - profile: desktop-chromium
+      browser: Chromium
+      device: Desktop 1440x900
+      suite: full
+      result: 8 passed, 1 accessibility failure
+    - profile: mobile-chromium
+      browser: Chromium
+      device: Mobile 390x844
+      suite: critical smoke and responsive
+      result: 3 passed
+    - profile: desktop-firefox
+      browser: Firefox
+      device: Desktop 1440x900
+      suite: critical smoke
+      result: 2 passed, 1 checkout failure
+    - profile: desktop-webkit
+      browser: WebKit
+      device: Desktop 1440x900
+      suite: critical smoke
+      result: 2 passed, 1 checkout failure
+  limitations:
+    - This is a public training sandbox evaluated as a simulated customer engagement.
+    - Full manual keyboard coverage and exhaustive negative validation were not completed.
+    - Accessibility coverage is semantic smoke testing, not a WCAG conformance audit.
+    - Security, load, backend API contract, real payment, and assistive-technology testing are outside scope.
+  allowlisted_observations:
+    - Third-party advertising domains were separated from first-party product health observations.
+
+findings:
+  - id: QP-COMPAT-001
+    title: Shipping address input is unusable in Firefox and WebKit
+    severity: Major
+    category: core-flows
+    source: automated-and-manual
+    environment: public-training-demo
+    browser/device: Firefox and WebKit desktop 1440x900
+    steps:
+      - Add two Wireless Mouse units to the cart.
+      - Proceed to the shipping-address step.
+      - Enter the published dummy name, street, city, state, and ZIP values.
+      - Attempt to save the address and continue to payment.
+    expected: Address fields retain typed values and the payment form opens.
+    actual: Every address field immediately returns to an empty value in Firefox and WebKit, so the modal remains on shipping and checkout cannot complete. WebKit also renders several fields at severely reduced widths.
+    evidence:
+      - artifacts/runs/20260830T073030Z-qa-practice-store-desktop-firefox/test-results/tests-qapractice-test-cart-checkout-py-test-shopper-can-complete-dummy-checkout-firefox/test-failed-1.png
+      - artifacts/runs/20260830T073030Z-qa-practice-store-desktop-firefox/test-results/tests-qapractice-test-cart-checkout-py-test-shopper-can-complete-dummy-checkout-firefox/trace.zip
+      - artifacts/runs/20260830T073107Z-qa-practice-store-desktop-webkit/test-results/tests-qapractice-test-cart-checkout-py-test-shopper-can-complete-dummy-checkout-webkit/test-failed-1.png
+      - artifacts/runs/20260830T073107Z-qa-practice-store-desktop-webkit/test-results/tests-qapractice-test-cart-checkout-py-test-shopper-can-complete-dummy-checkout-webkit/trace.zip
+    recommendation: Verify the controlled-input event handling and responsive form styles in Firefox/WebKit, then add a cross-browser checkout regression test.
+    status: verified
+
+  - id: QP-A11Y-001
+    title: Primary e-commerce content has no main landmark
+    severity: Minor
+    category: accessibility-smoke
+    source: automated-and-manual
+    environment: public-training-demo
+    browser/device: Chromium desktop 1440x900
+    steps:
+      - Open the e-commerce practice page.
+      - Inspect the document landmarks and heading structure.
+    expected: The primary storefront content is contained by exactly one main landmark.
+    actual: The document contains a visible H1 but no main element or equivalent main landmark.
+    evidence:
+      - artifacts/runs/20260830T072856Z-qa-practice-store-desktop-chromium/test-results/tests-qapractice-test-accessibility-responsive-py-test-catalog-has-basic-semantic-landmarks-chromium/test-failed-1.png
+      - artifacts/runs/20260830T072856Z-qa-practice-store-desktop-chromium/test-results/tests-qapractice-test-accessibility-responsive-py-test-catalog-has-basic-semantic-landmarks-chromium/trace.zip
+    recommendation: Wrap the page's primary e-commerce content in a main element while keeping the existing level-one heading.
+    status: verified

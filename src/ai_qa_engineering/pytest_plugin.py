@@ -67,6 +67,10 @@ def qa_profile(pytestconfig: pytest.Config, qa_config: QAConfig) -> BrowserProfi
 @pytest.fixture(scope="session")
 def qa_credentials(qa_config: QAConfig) -> ResolvedCredentials:
     """Resolve the configured account without exposing secret values to tests or logs."""
+    if qa_config.credentials is None:
+        raise pytest.UsageError(
+            "This test requests credentials, but the project configuration has none"
+        )
     return resolve_credentials(qa_config.credentials)
 
 

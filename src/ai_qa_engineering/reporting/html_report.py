@@ -88,6 +88,14 @@ def render_html(report: LaunchReport, destination: Path, *, repository_root: Pat
     detection_cards = "".join(
         _finding_card(finding, repository_root) for finding in report.detection_findings
     )
+    detection_section = ""
+    if detection_cards:
+        detection_section = (
+            '<section class="detection"><h2>Detection Demonstration — excluded from readiness</h2>'
+            "<p>Seeded faulty personas prove that the suite detects material defects. "
+            "These findings do not affect the standard-user score.</p>"
+            f"{detection_cards}</section>"
+        )
     document = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -146,7 +154,7 @@ def render_html(report: LaunchReport, destination: Path, *, repository_root: Pat
   <section><h2>Browser and device coverage</h2><table><thead><tr><th>Profile</th><th>Browser</th><th>Device</th><th>Suite</th><th>Result</th></tr></thead><tbody>{coverage_rows}</tbody></table></section>
   <section><h2>Network and console observations</h2><ul>{observations or "<li>No allowlisted observations.</li>"}</ul></section>
   <section><h2>Limitations</h2><ul>{limitations}</ul></section>
-  <section class="detection"><h2>Detection Demonstration — excluded from readiness</h2><p>Seeded faulty personas prove that the suite detects material defects. These findings do not affect the standard-user score.</p>{detection_cards or "<p>No detection findings.</p>"}</section>
+  {detection_section}
 </main><footer>Generated from verified structured results · Run {_escape(report.run_id)}</footer>
 </body></html>"""
     destination.write_text(document, encoding="utf-8")

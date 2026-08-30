@@ -26,6 +26,15 @@ def test_loads_saucedemo_audit_profiles() -> None:
 
 
 @pytest.mark.unit
+def test_loads_public_project_without_credentials() -> None:
+    config = load_config(Path("configs/qapractice.yaml"))
+
+    assert config.project.name == "qa-practice-store"
+    assert config.credentials is None
+    assert len(config.critical_flows) == 5
+
+
+@pytest.mark.unit
 def test_rejects_an_invalid_base_url(tmp_path: Path) -> None:
     config_file = tmp_path / "invalid.yaml"
     config_file.write_text(

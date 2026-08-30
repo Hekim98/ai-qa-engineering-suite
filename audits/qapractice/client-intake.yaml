@@ -1,0 +1,49 @@
+engagement:
+  client: QA Practice (simulated client)
+  product: E-commerce Automation Practice
+  target: https://www.qapractice.com/practice-ecommerece-website
+  environment: public-training-demo
+  launch_date: not-applicable-training-simulation
+  primary_contact: not-applicable-public-demo
+
+authorization:
+  basis:
+    - The site identifies itself as a free automation playground.
+    - The e-commerce page publishes Playwright examples, stable locators, and expected test cases.
+    - The site states that entered practice data is not stored.
+  approved_domains:
+    - www.qapractice.com
+  excluded_actions:
+    - No contact-form submissions.
+    - No requests against unrelated domains.
+    - No load, stress, security, or destructive testing.
+
+scope:
+  included:
+    - Product discovery, search, category filtering, sorting, and pagination.
+    - Product-detail review.
+    - Cart quantity, removal, and empty-cart protection.
+    - Published dummy address and payment checkout.
+    - Desktop/mobile responsive smoke checks.
+    - Chromium, Firefox, and WebKit compatibility smoke checks.
+    - Basic semantic accessibility, console, and network health.
+  excluded:
+    - Account registration and authentication.
+    - Real payment processing.
+    - Backend API contract, security, load, and full WCAG testing.
+
+test_data:
+  credentials_required: false
+  shopper_name: Ada Lovelace
+  address: 1 Analytical Ave, London, LDN, EC1A
+  payment: Published dummy Visa number ending in 1111, expiry 12/30, CVV 123
+  persistence: The training site states that entered data is not stored.
+
+acceptance:
+  critical_flows:
+    - CATALOG-001
+    - PRODUCT-001
+    - CART-001
+    - CHECKOUT-001
+    - RESPONSIVE-001
+  readiness_rule: Use the suite's standard weighted score and launch recommendation rules.

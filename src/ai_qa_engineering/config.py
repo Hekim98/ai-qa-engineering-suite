@@ -114,7 +114,7 @@ class CriticalFlow(StrictModel):
 
 class QAConfig(StrictModel):
     project: ProjectSettings
-    credentials: CredentialSettings
+    credentials: CredentialSettings | None = None
     browser: BrowserSettings
     artifacts: ArtifactSettings
     network: NetworkSettings = NetworkSettings()

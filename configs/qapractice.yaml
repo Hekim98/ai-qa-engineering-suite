@@ -1,0 +1,67 @@
+project:
+  name: qa-practice-store
+  base_url: https://www.qapractice.com/practice-ecommerece-website
+  environment: public-training-demo
+  tests_path: tests/qapractice
+
+browser:
+  profiles:
+    desktop-chromium:
+      engine: chromium
+      suite: full
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    mobile-chromium:
+      engine: chromium
+      suite: smoke
+      viewport:
+        width: 390
+        height: 844
+      mobile: true
+    desktop-firefox:
+      engine: firefox
+      suite: smoke
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    desktop-webkit:
+      engine: webkit
+      suite: smoke
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+
+artifacts:
+  root_dir: artifacts/runs
+  screenshot: on-failure
+  video: on-failure
+  trace: on-failure
+
+network:
+  capture_console_errors: true
+  capture_failed_requests: true
+  allowlist:
+    - googleads.g.doubleclick.net
+    - ep2.adtrafficquality.google
+    - googlesyndication.com
+
+critical_flows:
+  - id: CATALOG-001
+    name: Shopper can discover products
+    description: Products can be searched, filtered, sorted, and paginated.
+  - id: PRODUCT-001
+    name: Shopper can review product details
+    description: A product detail exposes name, price, description, and an add-to-cart action.
+  - id: CART-001
+    name: Shopper can manage the cart
+    description: Quantity, removal, item count, and empty-cart protection remain accurate.
+  - id: CHECKOUT-001
+    name: Shopper can complete the demo checkout
+    description: A shopper can provide an address and published dummy payment data to place an order.
+  - id: RESPONSIVE-001
+    name: Critical shopping controls remain usable on mobile
+    description: The catalog and critical checkout path fit the configured mobile viewport.

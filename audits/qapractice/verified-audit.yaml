@@ -1,0 +1,41 @@
+audit:
+  project: QA Practice E-commerce
+  target: https://www.qapractice.com/practice-ecommerece-website
+  executed_at_utc: 2026-08-30T07:28:57Z
+  status: complete-with-findings
+  scope: public-training-demo client simulation
+
+browser_matrix:
+  - profile: desktop-chromium
+    result: 8 passed, 1 failed
+    run: artifacts/runs/20260830T072856Z-qa-practice-store-desktop-chromium
+  - profile: mobile-chromium
+    result: 3 passed
+    run: artifacts/runs/20260830T073335Z-qa-practice-store-mobile-chromium
+  - profile: desktop-firefox
+    result: 2 passed, 1 failed
+    run: artifacts/runs/20260830T073030Z-qa-practice-store-desktop-firefox
+  - profile: desktop-webkit
+    result: 2 passed, 1 failed
+    run: artifacts/runs/20260830T073107Z-qa-practice-store-desktop-webkit
+
+critical_flows:
+  CATALOG-001: passed
+  PRODUCT-001: passed
+  CART-001: passed
+  CHECKOUT-001: failed-cross-browser
+  RESPONSIVE-001: passed
+
+verified_findings:
+  Critical: 0
+  Major: 1
+  Minor: 1
+
+observability:
+  unexpected_first_party_console_errors: 0
+  unexpected_first_party_failed_requests: 0
+
+limitations:
+  - Full manual keyboard coverage and exhaustive negative validation were not completed.
+  - Accessibility coverage is a semantic smoke assessment, not a WCAG conformance audit.
+  - Security, load, backend API contract, real payment, and assistive-technology testing are outside scope.

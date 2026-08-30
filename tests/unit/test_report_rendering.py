@@ -133,6 +133,24 @@ def test_renderers_use_same_validated_report(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_renderers_omit_empty_detection_demonstration(tmp_path: Path) -> None:
+    run_dir, findings = _write_inputs(tmp_path)
+    report = load_report_inputs(run_dir, findings, repository_root=tmp_path).model_copy(
+        update={"detection_findings": ()}
+    )
+    html_path = tmp_path / "without-detection.html"
+    pdf_path = tmp_path / "without-detection.pdf"
+
+    render_html(report, html_path, repository_root=tmp_path)
+    render_pdf(report, pdf_path, repository_root=tmp_path)
+
+    html = html_path.read_text(encoding="utf-8")
+    pdf_text = "\n".join(page.extract_text() or "" for page in PdfReader(pdf_path).pages)
+    assert "Detection Demonstration" not in html
+    assert "Detection Demonstration" not in pdf_text
+
+
+@pytest.mark.unit
 def test_loader_rejects_missing_evidence(tmp_path: Path) -> None:
     run_dir, findings = _write_inputs(tmp_path, evidence_exists=False)
 

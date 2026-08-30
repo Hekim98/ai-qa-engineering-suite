@@ -354,19 +354,20 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
     for limitation in report.metadata.limitations:
         story.append(Paragraph(f"• {limitation}", styles["body"]))
 
-    story.extend(
-        [
-            PageBreak(),
-            Paragraph("Detection Demonstration", styles["h1"]),
-            Paragraph(
-                "Seeded faulty personas prove the suite can detect material defects. "
-                "The following findings are excluded from the standard-user readiness score.",
-                styles["body"],
-            ),
-        ]
-    )
-    for finding in report.detection_findings:
-        story.extend(_finding_story(finding, repository_root=repository_root, styles=styles))
+    if report.detection_findings:
+        story.extend(
+            [
+                PageBreak(),
+                Paragraph("Detection Demonstration", styles["h1"]),
+                Paragraph(
+                    "Seeded faulty personas prove the suite can detect material defects. "
+                    "The following findings are excluded from the standard-user readiness score.",
+                    styles["body"],
+                ),
+            ]
+        )
+        for finding in report.detection_findings:
+            story.extend(_finding_story(finding, repository_root=repository_root, styles=styles))
     story.append(
         KeepTogether(
             [Spacer(1, 8 * mm), Paragraph(f"Verified source run: {report.run_id}", styles["small"])]

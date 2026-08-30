@@ -1,0 +1,52 @@
+audit: QA Practice E-commerce Client Simulation
+auditor: AI QA Engineering Suite
+scope: Public training storefront with non-persistent dummy checkout data
+checks:
+  - id: UX-001
+    area: product-discovery
+    check: Search, filters, sort, result count, and pagination are understandable and consistent.
+    method: manual-and-automated
+    status: verified-pass
+    notes: Search, sort, pagination, product detail, cart count, and removal matched the published expectations.
+  - id: UX-002
+    area: checkout
+    check: Cart, address, payment, and confirmation progression clearly communicates the current step.
+    method: manual-and-automated
+    status: verified-fail
+    notes: Chromium desktop/mobile complete the journey, but Firefox and WebKit cannot retain shipping-address input and never reach payment.
+  - id: RESP-001
+    area: responsive
+    check: Catalog, cart, address, payment, and success states remain usable at 390x844.
+    method: manual-and-automated
+    status: verified-pass
+    notes: The 390x844 catalog and dummy checkout complete without horizontal overflow after opening the responsive search menu.
+  - id: A11Y-001
+    area: keyboard
+    check: Search, product, cart, checkout, and payment controls can be reached and operated by keyboard.
+    method: manual
+    status: not-completed
+    notes: Full manual keyboard coverage remains outside this simulation pass.
+  - id: A11Y-002
+    area: semantics
+    check: The page exposes a meaningful title, main landmark, level-one heading, labels, and image alternatives.
+    method: automated
+    status: verified-fail
+    notes: The page has one H1 and image alternatives, but no main landmark wraps the primary content.
+  - id: ERR-001
+    area: validation
+    check: Invalid quantities, incomplete addresses, and invalid payment values explain recovery.
+    method: manual
+    status: not-completed
+    notes: Published positive checkout data was covered; exhaustive negative validation remains outside this pass.
+  - id: EDGE-001
+    area: cart-state
+    check: Repeated add, removal, pagination, refresh, and back navigation preserve consistent cart totals.
+    method: manual
+    status: verified-pass
+    notes: Empty-cart protection, quantity count, removal, search, sort, and pagination remained consistent in Chromium desktop.
+  - id: OBS-001
+    area: technical-health
+    check: First-party requests and browser console remain free of unexpected errors.
+    method: automated
+    status: verified-pass
+    notes: No unexpected first-party console errors or failed requests were recorded in the verified matrix.

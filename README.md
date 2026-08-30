@@ -106,6 +106,15 @@ Market-validation materials:
 - [Founder outreach messages](outreach/templates.md)
 - [Public-source prospect tracker](outreach/prospects.csv)
 
+Second-client learning pack:
+
+- [QA Practice client simulation](docs/QA_PRACTICE_CLIENT_SIMULATION.md)
+- [Simulated customer intake](audits/qapractice/client-intake.yaml)
+- [Executable client configuration](configs/qapractice.yaml)
+- [Manual exploratory checklist](audits/qapractice/manual-exploratory-checklist.yaml)
+- [Verified HTML client-simulation report](output/html/qa-practice-store-launch-readiness-report.html)
+- [Verified PDF client-simulation report](output/pdf/qa-practice-store-launch-readiness-report.pdf)
+
 Run all local quality gates:
 
 ```bash
