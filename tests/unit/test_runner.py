@@ -92,3 +92,38 @@ def test_execute_profiles_reads_structured_run_result(tmp_path: Path) -> None:
     assert executions[0].status is RunStatus.PASSED
     assert executions[0].exit_code == 0
     assert (executions[0].run_dir / "logs/ai-qa.log").is_file()
+
+
+@pytest.mark.unit
+def test_execute_profiles_accepts_an_orchestrated_artifact_root(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(Path("configs/example.yaml").read_text(encoding="utf-8"))
+    (tmp_path / "tests/example_project").mkdir(parents=True)
+
+    def fake_run(command: list[str]) -> int:
+        run_dir = Path(command[command.index("--ai-qa-run-dir") + 1])
+        run_id = command[command.index("--ai-qa-run-id") + 1]
+        result = RunResult(
+            run_id=run_id,
+            project="demo-ai-app",
+            environment="staging",
+            profile="desktop-chromium",
+            browser="chromium",
+            status=RunStatus.PASSED,
+            started_at=datetime(2026, 9, 3, tzinfo=UTC),
+            finished_at=datetime(2026, 9, 3, tzinfo=UTC),
+            pytest_exit_code=0,
+            tests=(),
+        )
+        (run_dir / "run.json").write_text(result.model_dump_json(), encoding="utf-8")
+        return 0
+
+    execution = execute_profiles(
+        config_path,
+        profile_names=["desktop-chromium"],
+        repository_root=tmp_path,
+        artifact_root="artifacts/audits/audit-1/profiles",
+        run_command=fake_run,
+    )[0]
+
+    assert execution.run_dir.is_relative_to(tmp_path / "artifacts/audits/audit-1/profiles")

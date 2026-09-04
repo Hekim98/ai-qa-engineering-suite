@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from playwright.sync_api import ConsoleMessage, Page, Request, Response
 
 from ai_qa_engineering.results import ConsoleRecord, NetworkRecord
@@ -16,10 +18,12 @@ class BrowserObserver:
         *,
         capture_console_errors: bool = True,
         capture_failed_requests: bool = True,
+        redact: Callable[[str], str] | None = None,
     ) -> None:
         self.allowlist = allowlist
         self.capture_console_errors = capture_console_errors
         self.capture_failed_requests = capture_failed_requests
+        self.redact = redact or (lambda value: value)
         self.console_errors: list[ConsoleRecord] = []
         self.failed_requests: list[NetworkRecord] = []
 
@@ -33,7 +37,13 @@ class BrowserObserver:
             or self._allowed(f"{url or ''} {text}")
         ):
             return
-        self.console_errors.append(ConsoleRecord(level=level, text=text, url=url))
+        self.console_errors.append(
+            ConsoleRecord(
+                level=level,
+                text=self.redact(text),
+                url=self.redact(url) if url else None,
+            )
+        )
 
     def record_request_failure(
         self,
@@ -46,7 +56,12 @@ class BrowserObserver:
         if not self.capture_failed_requests or self._allowed(url):
             return
         self.failed_requests.append(
-            NetworkRecord(url=url, method=method, reason=reason, status=status)
+            NetworkRecord(
+                url=self.redact(url),
+                method=method,
+                reason=self.redact(reason),
+                status=status,
+            )
         )
 
     def attach(self, page: Page) -> None:

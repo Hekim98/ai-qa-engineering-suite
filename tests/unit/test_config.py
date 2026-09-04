@@ -22,6 +22,11 @@ def test_loads_saucedemo_audit_profiles() -> None:
 
     assert config.browser.profiles["mobile-chromium"].viewport.width == 390
     assert config.browser.profiles["detection-chromium"].suite is SuiteLevel.DETECTION_DEMO
+    assert config.security.sensitive_selectors == (
+        '[data-test="username"]',
+        '[data-test="password"]',
+    )
+    assert config.orchestration.retry_failures == 1
     assert len(config.critical_flows) == 5
 
 
@@ -72,3 +77,25 @@ def test_rejects_duplicate_critical_flow_ids(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigError, match="unique"):
         load_config(config_file)
+
+
+@pytest.mark.unit
+def test_loads_named_credential_accounts(tmp_path: Path) -> None:
+    config_file = tmp_path / "accounts.yaml"
+    content = Path("configs/example.yaml").read_text(encoding="utf-8")
+    config_file.write_text(
+        content.replace(
+            "  password_env: AI_QA_TEST_USER_PASSWORD\n",
+            "  password_env: AI_QA_TEST_USER_PASSWORD\n"
+            "  accounts:\n"
+            "    admin:\n"
+            "      username_env: AI_QA_ADMIN_EMAIL\n"
+            "      password_env: AI_QA_ADMIN_PASSWORD\n",
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_config(config_file)
+
+    assert config.credentials is not None
+    assert config.credentials.accounts["admin"].username_env == "AI_QA_ADMIN_EMAIL"

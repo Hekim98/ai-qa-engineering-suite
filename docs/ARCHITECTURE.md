@@ -46,6 +46,12 @@ The core must not import client-specific code. Reports consume structured result
 
 `ai-qa test` validates the project configuration, creates an immutable run ID, and starts one Pytest process per selected browser profile. The engine's `qa_page` fixture creates a profile-sized page through Pytest Playwright's managed `new_context` factory, preserving official screenshot, trace, and video retention while applying the exact configured viewport. The AI QA plugin writes normalized diagnostics and a versioned `run.json` before the process exits.
 
+`ai-qa audit` adds an orchestration boundary above those isolated runs. It creates one audit ID,
+executes the selected matrix below that audit, retries failing profiles once, compares test
+outcomes by node ID, and produces a combined `audit.json`, evidence index, candidate review
+queue, and explicitly unverified draft reports. It never feeds candidate failures directly into
+launch-readiness scoring.
+
 An unreachable environment or HTTP 5xx during guarded navigation marks the run `incomplete`; it is not silently converted into a product defect.
 
 ## Configuration boundary

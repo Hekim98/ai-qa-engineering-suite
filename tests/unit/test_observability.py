@@ -63,3 +63,24 @@ def test_observer_can_discard_an_expected_negative_request() -> None:
         status=404,
     )
     assert observer.failed_requests == []
+
+
+@pytest.mark.unit
+def test_observer_redacts_secrets_from_console_and_network_records() -> None:
+    observer = BrowserObserver(redact=lambda value: value.replace("secret-123", "[REDACTED]"))
+
+    observer.record_console(
+        level="error",
+        text="Login failed for secret-123",
+        url="https://example.test/?token=secret-123",
+    )
+    observer.record_request_failure(
+        url="https://example.test/?token=secret-123",
+        method="GET",
+        reason="Rejected secret-123",
+    )
+
+    assert observer.console_errors[0].text == "Login failed for [REDACTED]"
+    assert observer.console_errors[0].url == "https://example.test/?token=[REDACTED]"
+    assert observer.failed_requests[0].url.endswith("token=[REDACTED]")
+    assert observer.failed_requests[0].reason == "Rejected [REDACTED]"

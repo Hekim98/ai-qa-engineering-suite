@@ -58,6 +58,11 @@ network:
   allowlist:
     - events.backtrace.io
 
+security:
+  sensitive_selectors:
+    - '[data-test="username"]'
+    - '[data-test="password"]'
+
 critical_flows:
   - id: AUTH-001
     name: Standard user can log in

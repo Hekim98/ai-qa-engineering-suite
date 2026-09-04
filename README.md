@@ -71,6 +71,16 @@ Run one configured browser profile:
 ai-qa test configs/example.yaml --profile desktop-chromium
 ```
 
+Run a complete, combined audit with one retry for failed profiles:
+
+```bash
+ai-qa audit configs/qapractice.yaml
+```
+
+The orchestrator creates one immutable package below `artifacts/audits/`, combines the browser
+matrix, separates persistent failures from flaky tests, builds an evidence index, and renders
+unscored draft HTML/PDF summaries. See [Audit Orchestrator v1](docs/AUDIT_ORCHESTRATOR.md).
+
 Generate both report formats from a completed run and verified findings:
 
 ```bash
@@ -78,6 +88,9 @@ ai-qa report artifacts/runs/<run-id> --findings audits/saucedemo/manual-findings
 ```
 
 Each execution writes an ignored directory below `artifacts/runs/` containing logs, browser evidence, observability records, and a machine-readable `run.json`.
+
+The generic **Manual customer audit** GitHub Actions workflow can run a selected config without
+Codex or a local installation. It is manual-only, so pushes never contact configured targets.
 
 ## SauceDemo portfolio audit
 

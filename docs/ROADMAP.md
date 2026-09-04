@@ -44,15 +44,38 @@ Exit condition: verified findings are complete enough to support a client-qualit
 
 Exit condition: a founder can understand launch risk and recommended next actions without reading test code.
 
-## Milestone 5 — Market validation
+## Milestone 5 — Audit Orchestrator
 
-- [ ] Contact 20–30 well-matched founders
-- [ ] Complete one pilot audit
-- [ ] Collect outcome-focused feedback or a testimonial
-- [ ] Secure the first paid engagement
+- [x] Run the selected browser matrix with one command
+- [x] Group profile runs below one immutable audit ID
+- [x] Retry failures once and separate persistent failures from flaky tests
+- [x] Generate an evidence index and candidate-finding review queue
+- [x] Render explicitly unscored draft HTML/PDF reports
+- [x] Add secret preflight, named test accounts, redaction, and visual masking support
+- [x] Add a generic manual-only GitHub Actions audit workflow
 
-Exit condition: payment validates the offer strongly enough to justify further investment.
+Exit condition: one command creates a complete multi-browser review package without publishing
+unverified findings, scores, or recommendations.
+
+## Milestone 6 — Authenticated journeys and role coverage
+
+- [ ] Add reusable login/session-state helpers
+- [ ] Exercise default and named accounts in one controlled audit
+- [ ] Verify role boundaries, logout, expiration, and recovery paths
+- [ ] Demonstrate the capability against an authorized sandbox target
+
+## Milestone 7 — Local audit dashboard
+
+- [ ] Start audits without terminal commands
+- [ ] Review profile status, evidence, candidate findings, and flaky tests
+- [ ] Confirm or reject findings before final report generation
+
+## Deferred market validation
+
+Founder outreach, pilot recruitment, and paid engagements remain intentionally deferred until the
+technical workflow is ready for the desired level of independent use.
 
 ## Later phases
 
-API and workflow QA, AI-feature evaluation, AI-agent reliability evaluation, continuous release QA, and only then a potential product/dashboard layer.
+AI-assisted finding analysis, API and workflow QA, AI-feature evaluation, AI-agent reliability
+evaluation, continuous release QA, and later a potential hosted product layer.

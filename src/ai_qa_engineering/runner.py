@@ -42,6 +42,7 @@ def build_pytest_command(
     config: QAConfig,
     profile_name: str,
     paths: RunPaths,
+    tests_path: Path | None = None,
 ) -> list[str]:
     profile = config.browser.profiles[profile_name]
     marker = profile.suite.value
@@ -49,7 +50,7 @@ def build_pytest_command(
         sys.executable,
         "-m",
         "pytest",
-        str(config.project.tests_path),
+        str(tests_path or config.project.tests_path),
         "-p",
         "ai_qa_engineering.pytest_plugin",
         "--no-cov",
@@ -83,6 +84,7 @@ def execute_profiles(
     *,
     profile_names: Sequence[str] | None = None,
     repository_root: str | Path | None = None,
+    artifact_root: str | Path | None = None,
     run_command: Callable[[list[str]], int] | None = None,
 ) -> tuple[ProfileExecution, ...]:
     repo_root = Path(repository_root or Path.cwd()).resolve()
@@ -103,7 +105,7 @@ def execute_profiles(
     for profile_name in selected:
         paths = RunPaths.create(
             repository_root=repo_root,
-            artifact_root=config.artifacts.root_dir,
+            artifact_root=artifact_root or config.artifacts.root_dir,
             project=config.project.name,
             profile=profile_name,
         )
@@ -113,6 +115,7 @@ def execute_profiles(
             config=config,
             profile_name=profile_name,
             paths=paths,
+            tests_path=tests_path,
         )
         logger.info("Starting browser profile %s", profile_name)
         exit_code = command_runner(command)

@@ -56,9 +56,26 @@ class ProjectSettings(StrictModel):
         return _safe_relative_path(value, "project.tests_path")
 
 
-class CredentialSettings(StrictModel):
+class CredentialAccountSettings(StrictModel):
     username_env: str = Field(min_length=1, pattern=r"^[A-Z][A-Z0-9_]*$")
     password_env: str = Field(min_length=1, pattern=r"^[A-Z][A-Z0-9_]*$")
+
+
+class CredentialSettings(CredentialAccountSettings):
+    accounts: dict[str, CredentialAccountSettings] = Field(default_factory=dict)
+
+    @field_validator("accounts")
+    @classmethod
+    def validate_account_names(
+        cls, value: dict[str, CredentialAccountSettings]
+    ) -> dict[str, CredentialAccountSettings]:
+        for name in value:
+            if not name.replace("-", "_").isidentifier():
+                raise ValueError(
+                    "credential account names may contain only letters, numbers, "
+                    "underscores, and hyphens"
+                )
+        return value
 
 
 class ViewportSettings(StrictModel):
@@ -106,6 +123,27 @@ class NetworkSettings(StrictModel):
     allowlist: tuple[str, ...] = ()
 
 
+class SecuritySettings(StrictModel):
+    sensitive_selectors: tuple[str, ...] = ()
+
+    @field_validator("sensitive_selectors")
+    @classmethod
+    def validate_sensitive_selectors(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if any(not selector.strip() for selector in value):
+            raise ValueError("security.sensitive_selectors cannot contain blank selectors")
+        return value
+
+
+class OrchestrationSettings(StrictModel):
+    audit_root: Path = Path("artifacts/audits")
+    retry_failures: int = Field(default=1, ge=0, le=1)
+
+    @field_validator("audit_root")
+    @classmethod
+    def validate_audit_root(cls, value: Path) -> Path:
+        return _safe_relative_path(value, "orchestration.audit_root")
+
+
 class CriticalFlow(StrictModel):
     id: str = Field(min_length=1, pattern=r"^[A-Z][A-Z0-9_-]*$")
     name: str = Field(min_length=1)
@@ -118,6 +156,8 @@ class QAConfig(StrictModel):
     browser: BrowserSettings
     artifacts: ArtifactSettings
     network: NetworkSettings = NetworkSettings()
+    security: SecuritySettings = SecuritySettings()
+    orchestration: OrchestrationSettings = OrchestrationSettings()
     critical_flows: tuple[CriticalFlow, ...] = Field(min_length=1)
 
     @model_validator(mode="after")

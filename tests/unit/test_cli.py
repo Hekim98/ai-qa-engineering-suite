@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from ai_qa_engineering.audit_models import AuditStatus
 from ai_qa_engineering.cli import main
 from ai_qa_engineering.reporting.loader import ReportInputError
 from ai_qa_engineering.results import RunStatus
@@ -98,3 +99,36 @@ def test_report_command_returns_two_for_invalid_inputs(
     output = capsys.readouterr()
     assert exit_code == 2
     assert "Evidence files not found" in output.err
+
+
+@pytest.mark.unit
+def test_audit_command_prints_combined_summary_and_review_exit_code(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audit = SimpleNamespace(
+        audit_id="audit-1",
+        status=AuditStatus.NEEDS_REVIEW,
+        profiles=(object(), object()),
+        total_tests=8,
+        passed_tests=7,
+        persistent_failures=1,
+        flaky_tests=0,
+        candidate_findings=(object(),),
+    )
+    outputs = SimpleNamespace(
+        audit=audit,
+        audit_directory=tmp_path / "audit-1",
+        html_report=tmp_path / "draft.html",
+        pdf_report=tmp_path / "draft.pdf",
+    )
+    monkeypatch.setattr("ai_qa_engineering.cli.run_audit", lambda *_args, **_kwargs: outputs)
+
+    exit_code = main(["audit", "configs/qapractice.yaml"])
+
+    output = capsys.readouterr()
+    assert exit_code == 1
+    assert '"status": "needs-review"' in output.out
+    assert '"candidate_findings": 1' in output.out
+    assert '"score": null' in output.out

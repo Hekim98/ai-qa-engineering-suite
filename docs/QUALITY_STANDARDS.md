@@ -22,6 +22,10 @@ Severity describes impact, not how difficult a defect is to fix.
 
 Every reportable defect should include a reproducible path, expected and actual behavior, environment details, and the smallest useful evidence set. Screenshots establish visual state; video or traces establish sequence; logs support technical diagnosis.
 
+An automated failure is a candidate, not a verified defect. Persistent and flaky outcomes must
+remain distinguishable. Neither may affect a published score or recommendation until a human has
+confirmed expected behavior, reproducibility, impact, and evidence.
+
 ## Client-data handling
 
 - Store no real credentials in configuration or source control.

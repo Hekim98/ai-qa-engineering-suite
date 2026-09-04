@@ -16,7 +16,14 @@ from playwright.sync_api import BrowserContext, Page
 from ai_qa_engineering.config import BrowserProfile, QAConfig, load_config
 from ai_qa_engineering.observability import BrowserObserver
 from ai_qa_engineering.results import RunResult, RunStatus, TestOutcome, TestResult
-from ai_qa_engineering.secrets import ResolvedCredentials, resolve_credentials
+from ai_qa_engineering.secrets import (
+    MissingSecretError,
+    ResolvedCredentials,
+    available_secret_values,
+    redact_text,
+    resolve_accounts,
+    resolve_credentials,
+)
 
 
 @dataclass
@@ -30,6 +37,7 @@ class RunRecorder:
     console_errors: list[Any] = field(default_factory=list)
     failed_requests: list[Any] = field(default_factory=list)
     incomplete_reason: str | None = None
+    secret_values: tuple[str, ...] = field(default_factory=tuple, repr=False)
 
 
 _ACTIVE_RECORDER: RunRecorder | None = None
@@ -75,6 +83,48 @@ def qa_credentials(qa_config: QAConfig) -> ResolvedCredentials:
 
 
 @pytest.fixture(scope="session")
+def qa_account(qa_config: QAConfig) -> Callable[[str], ResolvedCredentials]:
+    """Return a named test account resolver without exposing values in configuration."""
+    if qa_config.credentials is None:
+        raise pytest.UsageError(
+            "This test requests a named account, but the project configuration has none"
+        )
+    try:
+        accounts = resolve_accounts(qa_config.credentials)
+    except MissingSecretError as exc:
+        raise pytest.UsageError(str(exc)) from exc
+
+    def resolve(name: str) -> ResolvedCredentials:
+        try:
+            return accounts[name]
+        except KeyError as exc:
+            available = ", ".join(sorted(accounts))
+            raise pytest.UsageError(
+                f"Unknown credential account: {name}. Available accounts: {available}"
+            ) from exc
+
+    return resolve
+
+
+def _sensitive_mask_script(selectors: tuple[str, ...]) -> str:
+    encoded = json.dumps(selectors)
+    return f"""
+        (() => {{
+          const selectors = {encoded};
+          const mask = () => {{
+            for (const selector of selectors) {{
+              for (const element of document.querySelectorAll(selector)) {{
+                element.style.setProperty('filter', 'blur(10px)', 'important');
+              }}
+            }}
+          }};
+          document.addEventListener('DOMContentLoaded', mask);
+          new MutationObserver(mask).observe(document, {{subtree: true, childList: true}});
+        }})();
+    """
+
+
+@pytest.fixture(scope="session")
 def qa_run_dir(pytestconfig: pytest.Config) -> Path:
     """Expose the isolated run directory for explicit audit evidence."""
     return Path(_required_option(pytestconfig, "--ai-qa-run-dir"))
@@ -84,6 +134,7 @@ def qa_run_dir(pytestconfig: pytest.Config) -> Path:
 def qa_page(
     new_context: Callable[..., BrowserContext],
     qa_profile: BrowserProfile,
+    qa_config: QAConfig,
 ) -> Generator[Page, None, None]:
     """Create a profile-sized page through pytest-playwright's managed context factory."""
     context = new_context(
@@ -94,6 +145,10 @@ def qa_page(
         is_mobile=qa_profile.mobile,
         has_touch=qa_profile.mobile,
     )
+    if qa_config.security.sensitive_selectors:
+        context.add_init_script(
+            script=_sensitive_mask_script(qa_config.security.sensitive_selectors)
+        )
     yield context.new_page()
 
 
@@ -108,10 +163,12 @@ def browser_observer(
     request: pytest.FixtureRequest,
     pytestconfig: pytest.Config,
 ) -> Generator[BrowserObserver, None, None]:
+    secret_values = available_secret_values(qa_config.credentials)
     observer = BrowserObserver(
         qa_config.network.allowlist,
         capture_console_errors=qa_config.network.capture_console_errors,
         capture_failed_requests=qa_config.network.capture_failed_requests,
+        redact=lambda value: redact_text(value, secret_values),
     )
     observer.attach(qa_page)
     yield observer
@@ -138,11 +195,13 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     if not all((config_path, run_dir, profile_name, run_id)):
         _ACTIVE_RECORDER = None
         return
+    qa_config = load_config(Path(config_path))
     _ACTIVE_RECORDER = RunRecorder(
         run_id=str(run_id),
-        config=load_config(Path(config_path)),
+        config=qa_config,
         profile_name=str(profile_name),
         run_dir=Path(run_dir),
+        secret_values=available_secret_values(qa_config.credentials),
     )
 
 
@@ -157,6 +216,8 @@ def pytest_runtest_logreport(report: pytest.TestReport) -> None:
         outcome = TestOutcome(report.outcome)
 
     error = str(report.longrepr) if report.failed else None
+    if error:
+        error = redact_text(error, _ACTIVE_RECORDER.secret_values)
     if error and "TargetUnavailableError" in error:
         _ACTIVE_RECORDER.incomplete_reason = error.splitlines()[-1]
     _ACTIVE_RECORDER.tests.append(
@@ -167,6 +228,18 @@ def pytest_runtest_logreport(report: pytest.TestReport) -> None:
             error=error,
         )
     )
+
+
+@pytest.hookimpl(wrapper=True, tryfirst=True)
+def pytest_runtest_makereport(
+    item: pytest.Item,
+    call: pytest.CallInfo[Any],
+) -> Generator[None, pytest.TestReport, pytest.TestReport]:
+    """Redact configured secrets before Pytest's terminal reporter sees a failure."""
+    report = yield
+    if _ACTIVE_RECORDER is not None and report.failed and report.longrepr:
+        report.longrepr = redact_text(str(report.longrepr), _ACTIVE_RECORDER.secret_values)
+    return report
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
