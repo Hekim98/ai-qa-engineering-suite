@@ -36,7 +36,9 @@ select configuration and profiles
   -> watch completion status
   -> inspect profile attempts and evidence
   -> confirm or reject every candidate
-  -> open the report-preparation gate
+  -> complete category and critical-flow assessments
+  -> generate HTML/PDF and inspect every rendered page
+  -> approve the visually verified report
 ```
 
 Only one audit runs at a time. This avoids competing browser processes and makes the current job
@@ -57,8 +59,9 @@ The report-preparation gate remains blocked while any candidate is pending or th
 incomplete. A clean audit with no candidates opens the gate automatically.
 
 Opening this gate does not invent category assessments, business impact, or a readiness score.
-The existing verified report workflow still requires complete human-authored report inputs. A
-later milestone can bring those final inputs and report generation into the same interface.
+The verified report workspace requires those human-authored inputs, derives browser coverage from
+the selected audit, and converts confirmed candidates into complete findings. See
+[Verified Report Workspace](VERIFIED_REPORT_WORKSPACE.md).
 
 ## Local security boundary
 
@@ -87,4 +90,3 @@ proxy, or a shared host.
 - **Port is in use:** start with another port, for example `ai-qa dashboard --port 9123`.
 - **No screenshot or trace:** failure-only evidence policies retain those files only when the
   corresponding test fails.
-

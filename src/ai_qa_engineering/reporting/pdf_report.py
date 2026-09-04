@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from html import escape
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -171,8 +172,11 @@ def _finding_story(
     heading = Table(
         [
             [
-                Paragraph(finding.severity.value, styles["badge"]),
-                Paragraph(f"{finding.id} · {finding.title}", styles["h2"]),
+                Paragraph(escape(finding.severity.value), styles["badge"]),
+                Paragraph(
+                    f"{escape(finding.id)} · {escape(finding.title)}",
+                    styles["h2"],
+                ),
             ]
         ],
         colWidths=[26 * mm, 145 * mm],
@@ -193,23 +197,29 @@ def _finding_story(
     details = [
         [
             Paragraph("Environment", styles["small"]),
-            Paragraph(finding.environment, styles["small"]),
+            Paragraph(escape(finding.environment), styles["small"]),
         ],
         [
             Paragraph("Browser / device", styles["small"]),
-            Paragraph(finding.browser_device, styles["small"]),
+            Paragraph(escape(finding.browser_device), styles["small"]),
         ],
-        [Paragraph("Expected", styles["small"]), Paragraph(finding.expected, styles["small"])],
-        [Paragraph("Actual", styles["small"]), Paragraph(finding.actual, styles["small"])],
+        [
+            Paragraph("Expected", styles["small"]),
+            Paragraph(escape(finding.expected), styles["small"]),
+        ],
+        [
+            Paragraph("Actual", styles["small"]),
+            Paragraph(escape(finding.actual), styles["small"]),
+        ],
         [
             Paragraph("Recommendation", styles["small"]),
-            Paragraph(finding.recommendation, styles["small"]),
+            Paragraph(escape(finding.recommendation), styles["small"]),
         ],
     ]
     story: list[Any] = [heading, Spacer(1, 4), _table(details, [34 * mm, 137 * mm], header=False)]
     story.append(Paragraph("Reproduction", styles["h2"]))
     for index, step in enumerate(finding.steps, start=1):
-        story.append(Paragraph(f"{index}. {step}", styles["body"]))
+        story.append(Paragraph(f"{index}. {escape(step)}", styles["body"]))
     image_flows: list[Image] = []
     other_evidence: list[Path] = []
     for relative in finding.evidence:
@@ -226,7 +236,7 @@ def _finding_story(
                 [Spacer(1, 6), Table([image_flows], colWidths=[82 * mm] * len(image_flows))]
             )
     for evidence in other_evidence:
-        story.append(Paragraph(f"Evidence: {evidence}", styles["small"]))
+        story.append(Paragraph(f"Evidence: {escape(str(evidence))}", styles["small"]))
     story.extend([Spacer(1, 12)])
     return story
 
@@ -248,12 +258,12 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
     cover = Table(
         [
             [Paragraph("AI QA ENGINEERING SUITE", styles["subtitle"])],
-            [Paragraph(report.metadata.title, styles["title"])],
+            [Paragraph(escape(report.metadata.title), styles["title"])],
             [
                 Paragraph(
                     (
-                        f"{report.metadata.project} · {report.metadata.target}"
-                        f"<br/>{report.metadata.audit_date}"
+                        f"{escape(report.metadata.project)} · {escape(str(report.metadata.target))}"
+                        f"<br/>{escape(str(report.metadata.audit_date))}"
                     ),
                     styles["subtitle"],
                 )
@@ -276,7 +286,7 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
                     score_text, ParagraphStyle("Score", parent=styles["title"], textColor=GREEN)
                 ),
                 Paragraph(
-                    report.recommendation.value,
+                    escape(report.recommendation.value),
                     ParagraphStyle("Rec", parent=styles["badge"], backColor=MAJOR, borderPadding=8),
                 ),
             ]
@@ -292,7 +302,7 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
             summary,
             Spacer(1, 8 * mm),
             Paragraph("Executive summary", styles["h1"]),
-            Paragraph(report.metadata.executive_summary, styles["body"]),
+            Paragraph(escape(report.metadata.executive_summary), styles["body"]),
             PageBreak(),
         ]
     )
@@ -302,11 +312,11 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
     for category_score in report.category_scores:
         score_data.append(
             [
-                Paragraph(category_score.category.value, styles["small"]),
+                Paragraph(escape(category_score.category.value), styles["small"]),
                 str(category_score.weight),
                 category_score.status.value,
                 f"{category_score.earned:g}",
-                Paragraph(category_score.rationale, styles["small"]),
+                Paragraph(escape(category_score.rationale), styles["small"]),
             ]
         )
     story.extend(
@@ -317,42 +327,55 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
     for flow in report.metadata.critical_flows:
         flow_data.append(
             [
-                Paragraph(flow.id, styles["small"]),
-                Paragraph(flow.name, styles["small"]),
+                Paragraph(escape(flow.id), styles["small"]),
+                Paragraph(escape(flow.name), styles["small"]),
                 Paragraph(flow.status.value, styles["small"]),
-                Paragraph(flow.evidence, styles["small"]),
+                Paragraph(escape(flow.evidence), styles["small"]),
             ]
         )
     story.extend([_table(flow_data, [28 * mm, 49 * mm, 20 * mm, 74 * mm]), PageBreak()])
 
     story.append(Paragraph("Verified readiness findings", styles["h1"]))
     severity_order = {"Critical": 0, "Major": 1, "Minor": 2}
-    for finding in sorted(
+    sorted_findings = sorted(
         report.readiness_findings, key=lambda item: severity_order[item.severity.value]
-    ):
+    )
+    for finding in sorted_findings:
         story.extend(_finding_story(finding, repository_root=repository_root, styles=styles))
+    if not sorted_findings:
+        story.append(Paragraph("No verified readiness findings were recorded.", styles["body"]))
+        story.append(Spacer(1, 8 * mm))
+    else:
+        story.append(PageBreak())
 
-    story.extend([PageBreak(), Paragraph("Browser and device coverage", styles["h1"])])
+    story.append(Paragraph("Browser and device coverage", styles["h1"]))
     coverage: list[list[Any]] = [["Profile", "Browser", "Device", "Suite", "Result"]]
     for browser_coverage in report.metadata.browser_coverage:
         coverage.append(
             [
-                Paragraph(browser_coverage.profile, styles["small"]),
-                Paragraph(browser_coverage.browser, styles["small"]),
-                Paragraph(browser_coverage.device, styles["small"]),
-                Paragraph(browser_coverage.suite, styles["small"]),
-                Paragraph(browser_coverage.result, styles["small"]),
+                Paragraph(escape(browser_coverage.profile), styles["small"]),
+                Paragraph(escape(browser_coverage.browser), styles["small"]),
+                Paragraph(escape(browser_coverage.device), styles["small"]),
+                Paragraph(escape(browser_coverage.suite), styles["small"]),
+                Paragraph(escape(browser_coverage.result), styles["small"]),
             ]
         )
     story.extend(
         [_table(coverage, [38 * mm, 25 * mm, 39 * mm, 27 * mm, 42 * mm]), Spacer(1, 10 * mm)]
     )
     story.append(Paragraph("Network and console observations", styles["h1"]))
-    for observation in report.metadata.allowlisted_observations:
-        story.append(Paragraph(f"• {observation}", styles["body"]))
+    if report.metadata.allowlisted_observations:
+        observations = "<br/><br/>".join(
+            f"- {escape(observation)}" for observation in report.metadata.allowlisted_observations
+        )
+        story.append(Paragraph(observations, styles["body"]))
+    else:
+        story.append(Paragraph("No allowlisted observations.", styles["body"]))
     story.append(Paragraph("Limitations", styles["h1"]))
-    for limitation in report.metadata.limitations:
-        story.append(Paragraph(f"• {limitation}", styles["body"]))
+    limitations = "<br/><br/>".join(
+        f"- {escape(limitation)}" for limitation in report.metadata.limitations
+    )
+    story.append(Paragraph(limitations, styles["body"]))
 
     if report.detection_findings:
         story.extend(
@@ -370,7 +393,10 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
             story.extend(_finding_story(finding, repository_root=repository_root, styles=styles))
     story.append(
         KeepTogether(
-            [Spacer(1, 8 * mm), Paragraph(f"Verified source run: {report.run_id}", styles["small"])]
+            [
+                Spacer(1, 8 * mm),
+                Paragraph(f"Verified source run: {escape(report.run_id)}", styles["small"]),
+            ]
         )
     )
     document.build(story, onFirstPage=_footer, onLaterPages=_footer)

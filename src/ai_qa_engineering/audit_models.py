@@ -42,6 +42,8 @@ class AttemptSummary(AuditModel):
 class ProfileAuditSummary(AuditModel):
     profile: str
     browser: str
+    device: str | None = None
+    suite: str | None = None
     status: RunStatus
     attempts: tuple[AttemptSummary, ...] = Field(min_length=1, max_length=2)
     persistent_failures: tuple[str, ...] = ()
@@ -67,8 +69,14 @@ class SecretPreflight(AuditModel):
     screenshot_masking_configured: bool
 
 
+class AuditedCriticalFlow(AuditModel):
+    id: str
+    name: str
+    description: str
+
+
 class AuditResult(AuditModel):
-    schema_version: int = 1
+    schema_version: int = 2
     audit_id: str
     project: str
     environment: str
@@ -77,6 +85,7 @@ class AuditResult(AuditModel):
     started_at: datetime
     finished_at: datetime
     profiles: tuple[ProfileAuditSummary, ...]
+    critical_flows: tuple[AuditedCriticalFlow, ...] = ()
     candidate_findings: tuple[CandidateFinding, ...] = ()
     total_tests: int = Field(ge=0)
     passed_tests: int = Field(ge=0)

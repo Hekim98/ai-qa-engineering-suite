@@ -14,7 +14,8 @@ import pytest
 
 from ai_qa_engineering.dashboard import DashboardHTTPServer, create_dashboard_server
 from ai_qa_engineering.orchestration import AuditOutputs
-from tests.dashboard_support import write_dashboard_fixture
+from ai_qa_engineering.reporting.verification import VerificationResult
+from tests.dashboard_support import report_workspace_submission, write_dashboard_fixture
 
 
 @contextmanager
@@ -55,7 +56,30 @@ def _json_request(
 
 
 @pytest.mark.unit
-def test_dashboard_http_flow_is_local_token_protected_and_reviewable(tmp_path: Path) -> None:
+def test_dashboard_http_flow_is_local_token_protected_and_reviewable(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_render(*_args: object, **kwargs: object) -> None:
+        Path(cast(str | Path, kwargs["html_path"])).write_text(
+            "<!doctype html><title>Fixture</title>", encoding="utf-8"
+        )
+        Path(cast(str | Path, kwargs["pdf_path"])).write_bytes(b"%PDF-fixture")
+
+    def fake_verify(
+        _report: object,
+        _html_path: Path,
+        _pdf_path: Path,
+        *,
+        render_directory: Path,
+    ) -> VerificationResult:
+        render_directory.mkdir(parents=True)
+        page = render_directory / "page-1.png"
+        page.write_bytes(b"fixture-image")
+        return VerificationResult(1, (page,), (("Rendered pages", "One page rendered."),))
+
+    monkeypatch.setattr("ai_qa_engineering.dashboard.render_report_outputs", fake_render)
+    monkeypatch.setattr("ai_qa_engineering.dashboard.verify_report_outputs", fake_verify)
     with _running_server(tmp_path) as (base_url, server):
         with urlopen(Request(f"{base_url}/health", method="HEAD"), timeout=3) as response:
             assert response.status == 200
@@ -111,6 +135,33 @@ def test_dashboard_http_flow_is_local_token_protected_and_reviewable(tmp_path: P
         )
         assert status == 200
         assert review["summary"]["report_gate"] == "open"
+
+        status, workspace = _json_request(
+            f"{base_url}/api/audits/{quote(audit_id)}/report-workspace",
+            method="POST",
+            token=server.csrf_token,
+            payload=report_workspace_submission().model_dump(mode="json"),
+        )
+        assert status == 200
+        assert workspace["status"] == "ready"
+
+        status, generated = _json_request(
+            f"{base_url}/api/audits/{quote(audit_id)}/report-generation",
+            method="POST",
+            token=server.csrf_token,
+            payload={"action": "generate"},
+        )
+        assert status == 200
+        assert generated["status"] == "awaiting-visual-review"
+
+        status, approved = _json_request(
+            f"{base_url}/api/audits/{quote(audit_id)}/visual-review",
+            method="POST",
+            token=server.csrf_token,
+            payload={"rationale": "Every rendered page was inspected."},
+        )
+        assert status == 200
+        assert approved["status"] == "verified"
 
         status, job = _json_request(
             f"{base_url}/api/audits",

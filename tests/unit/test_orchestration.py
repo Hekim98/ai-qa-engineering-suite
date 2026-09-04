@@ -106,6 +106,16 @@ def test_audit_combines_profiles_and_classifies_persistent_and_flaky_failures(
     assert outputs.audit.status is AuditStatus.NEEDS_REVIEW
     assert outputs.audit.persistent_failures == 1
     assert outputs.audit.flaky_tests == 1
+    assert outputs.audit.schema_version == 2
+    assert [flow.id for flow in outputs.audit.critical_flows] == [
+        "CATALOG-001",
+        "PRODUCT-001",
+        "CART-001",
+        "CHECKOUT-001",
+        "RESPONSIVE-001",
+    ]
+    assert outputs.audit.profiles[0].device == "Desktop"
+    assert outputs.audit.profiles[0].suite == "full"
     assert attempts == {"desktop-chromium": 2, "mobile-chromium": 2}
     assert {item.status for item in outputs.audit.candidate_findings} == {
         CandidateStatus.CANDIDATE,

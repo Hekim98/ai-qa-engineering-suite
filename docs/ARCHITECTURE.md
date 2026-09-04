@@ -74,8 +74,20 @@ served as inert text rather than executable same-origin content.
 
 Candidate confirmation requires severity, category, steps, expected and actual behavior, and a
 recommendation. Rejection requires a rationale. Incomplete audits and undecided candidates keep
-the report-preparation gate closed. Final scoring still consumes the stricter report data contract
-below.
+the report-preparation gate closed.
+
+The verified report workspace collects every weighted category and configured critical-flow
+assessment, plus the executive summary, limitations, and allowlisted observations. Browser and
+device coverage is derived from the immutable audit snapshot. Confirmed candidates are converted
+to complete `Finding` records; rejected candidates never enter the report. The resulting
+`FindingsDocument` is hashed, scored, and rendered through the same immutable `LaunchReport` used
+by the CLI report path.
+
+Generated HTML and PDF files are not immediately considered verified. Structural and identity
+checks run first, `pdfinfo` confirms the PDF page count, and Poppler renders every page to PNG.
+Those images are exposed through the same evidence allowlist for human inspection. A final visual
+approval is stored beside the report. Any material workspace or finding change produces a new
+input hash and marks the prior report stale until regeneration.
 
 ## Configuration boundary
 
@@ -102,6 +114,6 @@ Every finding carries:
 - evidence paths and relevant logs;
 - recommendation and verification status.
 
-The report command validates `run.json`, structured findings, and every referenced evidence path before rendering. A single immutable `LaunchReport` model drives both HTML and PDF outputs, preventing scoring or content drift between formats. Seeded `detection-demonstration` findings remain visible in a separate appendix but are excluded from readiness scoring.
+The report command validates `run.json`, structured findings, and every referenced evidence path before rendering. The dashboard constructs the same strict report inputs from persisted human decisions and validates all candidate evidence inside the selected audit package. A single immutable `LaunchReport` model drives both HTML and PDF outputs, preventing scoring or content drift between formats. Seeded `detection-demonstration` findings remain visible in a separate appendix but are excluded from readiness scoring.
 
 Category assessments use PASS=1, WARNING=0.5, and FAIL=0 against weights of 40, 20, 15, 10, 10, and 5. A blocked required assessment suppresses the score and produces an `INCOMPLETE` recommendation. Critical findings or failed critical flows always produce `DO NOT LAUNCH`.

@@ -79,9 +79,21 @@ preserve explicit human decisions before verified report preparation.
 
 ## Milestone 8 — Verified report workspace
 
-- [ ] Collect critical-flow and category assessments in the dashboard
-- [ ] Convert confirmed candidates into complete verified findings
-- [ ] Generate and visually validate final HTML/PDF reports from the same review workspace
+- [x] Collect critical-flow and category assessments in the dashboard
+- [x] Convert confirmed candidates into complete verified findings
+- [x] Generate and structurally validate final HTML/PDF reports from the same review workspace
+- [x] Render every PDF page and require explicit human visual approval
+
+Exit condition: one local audit package preserves the complete human decision trail, deterministic
+score, matching final reports, automated verification results, and visual-review approval.
+
+## Milestone 9 — API and workflow QA
+
+- [ ] Add reusable HTTP API checks with safe authentication and redaction
+- [ ] Validate schemas, status behavior, latency budgets, and negative cases
+- [ ] Exercise multi-step business workflows across browser and API boundaries
+- [ ] Feed API evidence into the same audit, review, and report contracts
+- [ ] Prove the layer against a controlled local API sandbox
 
 ## Deferred market validation
 
@@ -90,5 +102,5 @@ technical workflow is ready for the desired level of independent use.
 
 ## Later phases
 
-AI-assisted finding analysis, API and workflow QA, AI-feature evaluation, AI-agent reliability
-evaluation, continuous release QA, and later a potential hosted product layer.
+AI-assisted finding analysis, AI-feature evaluation, AI-agent reliability evaluation, continuous
+release QA, and later a potential hosted product layer.

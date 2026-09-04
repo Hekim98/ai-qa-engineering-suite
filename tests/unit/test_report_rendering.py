@@ -11,6 +11,7 @@ from ai_qa_engineering.reporting.html_report import render_html
 from ai_qa_engineering.reporting.loader import ReportInputError, load_report_inputs
 from ai_qa_engineering.reporting.models import LaunchReport
 from ai_qa_engineering.reporting.pdf_report import render_pdf
+from ai_qa_engineering.reporting.service import render_report_outputs
 from ai_qa_engineering.results import RunResult, RunStatus
 
 PNG = base64.b64decode(
@@ -117,12 +118,18 @@ def test_renderers_use_same_validated_report(tmp_path: Path) -> None:
     html_path = tmp_path / "report.html"
     pdf_path = tmp_path / "report.pdf"
 
-    render_html(report, html_path, repository_root=tmp_path)
-    render_pdf(report, pdf_path, repository_root=tmp_path)
+    outputs = render_report_outputs(
+        report,
+        repository_root=tmp_path,
+        html_path=html_path,
+        pdf_path=pdf_path,
+    )
 
     html = html_path.read_text(encoding="utf-8")
     pdf_text = "\n".join(page.extract_text() or "" for page in PdfReader(pdf_path).pages)
     assert report.score == 80
+    assert outputs.html_path == html_path
+    assert outputs.pdf_path == pdf_path
     assert "LAUNCH WITH CONDITIONS" in html
     assert "data:image/png;base64" in html
     assert "Detection Demonstration" in html
@@ -148,6 +155,23 @@ def test_renderers_omit_empty_detection_demonstration(tmp_path: Path) -> None:
     pdf_text = "\n".join(page.extract_text() or "" for page in PdfReader(pdf_path).pages)
     assert "Detection Demonstration" not in html
     assert "Detection Demonstration" not in pdf_text
+
+
+@pytest.mark.unit
+def test_pdf_does_not_create_a_blank_findings_page(tmp_path: Path) -> None:
+    run_dir, findings = _write_inputs(tmp_path)
+    report = load_report_inputs(run_dir, findings, repository_root=tmp_path).model_copy(
+        update={"readiness_findings": (), "detection_findings": ()}
+    )
+    pdf_path = tmp_path / "without-findings.pdf"
+
+    render_pdf(report, pdf_path, repository_root=tmp_path)
+
+    pages = PdfReader(pdf_path).pages
+    last_page_text = pages[-1].extract_text() or ""
+    assert len(pages) == 3
+    assert "No verified readiness findings were recorded." in last_page_text
+    assert "Browser and device coverage" in last_page_text
 
 
 @pytest.mark.unit

@@ -18,8 +18,9 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 7 adds AI QA Control Room: a localhost-only dashboard for starting audits, inspecting
-browser evidence, and recording human decisions without running each audit from the terminal.
+Milestone 8 completes the verified report workspace inside AI QA Control Room. Human-reviewed
+findings, category assessments, and critical-flow results now produce one deterministic score and
+matching HTML/PDF reports with automated and human visual verification.
 
 ```text
 Core QA Engine
@@ -104,7 +105,13 @@ ai-qa dashboard
 Choose a configuration and browser profiles, start one background audit, inspect its profile
 attempts and evidence, then confirm or reject every automated candidate. Review decisions survive
 dashboard restarts in the ignored audit package. The report-preparation gate never opens for an
-incomplete audit or while a candidate is undecided. See [Local Audit Dashboard](docs/LOCAL_DASHBOARD.md).
+incomplete audit or while a candidate is undecided.
+
+Complete all six category assessments and every configured critical flow, save limitations and
+the executive summary, then generate the final report. The dashboard checks HTML identity, PDF
+structure and text, runs `pdfinfo`, renders every PDF page to PNG with Poppler, and requires a
+human visual approval before the report is marked verified. See
+[Verified Report Workspace](docs/VERIFIED_REPORT_WORKSPACE.md).
 
 ## Controlled authenticated audit
 

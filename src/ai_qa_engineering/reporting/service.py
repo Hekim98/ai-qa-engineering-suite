@@ -37,3 +37,19 @@ def generate_report_outputs(
     render_html(report, html_destination, repository_root=root)
     render_pdf(report, pdf_destination, repository_root=root)
     return ReportOutputs(report=report, html_path=html_destination, pdf_path=pdf_destination)
+
+
+def render_report_outputs(
+    report: LaunchReport,
+    *,
+    repository_root: str | Path,
+    html_path: str | Path,
+    pdf_path: str | Path,
+) -> ReportOutputs:
+    """Render an already validated launch report to explicit safe destinations."""
+    root = Path(repository_root).resolve()
+    html_destination = Path(html_path)
+    pdf_destination = Path(pdf_path)
+    render_html(report, html_destination, repository_root=root)
+    render_pdf(report, pdf_destination, repository_root=root)
+    return ReportOutputs(report=report, html_path=html_destination, pdf_path=pdf_destination)

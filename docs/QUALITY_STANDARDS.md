@@ -26,6 +26,19 @@ An automated failure is a candidate, not a verified defect. Persistent and flaky
 remain distinguishable. Neither may affect a published score or recommendation until a human has
 confirmed expected behavior, reproducibility, impact, and evidence.
 
+## Report publication standard
+
+- Every weighted category must have one explicit status and an evidence-based rationale.
+- Every configured critical flow must have one explicit status and verified evidence.
+- Confirmed candidates must satisfy the complete finding contract; rejected candidates stay in
+  the decision history but never enter the final report.
+- HTML and PDF must be generated from the same immutable scored model.
+- PDF structure, text identity, Poppler page count, and every rendered page must pass automated
+  checks before visual review.
+- A human must inspect all rendered pages for clipping, overflow, broken tables, and unreadable
+  content before marking the report verified.
+- Any material input change invalidates the visual approval and makes the previous report stale.
+
 ## Client-data handling
 
 - Store no real credentials in configuration or source control.

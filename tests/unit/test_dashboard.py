@@ -11,9 +11,10 @@ from ai_qa_engineering.dashboard import (
     DashboardNotFoundError,
     DashboardService,
 )
-from ai_qa_engineering.dashboard_models import ReviewSubmission
+from ai_qa_engineering.dashboard_models import ReviewSubmission, VisualReviewSubmission
 from ai_qa_engineering.orchestration import AuditOutputs
-from tests.dashboard_support import write_dashboard_fixture
+from ai_qa_engineering.reporting.verification import VerificationResult
+from tests.dashboard_support import report_workspace_submission, write_dashboard_fixture
 
 
 def _wait_for_job(service: DashboardService, status: str) -> dict[str, object]:
@@ -142,3 +143,94 @@ def test_dashboard_redacts_secrets_from_background_errors(tmp_path: Path) -> Non
     failed = _wait_for_job(service, "failed")
 
     assert failed["error"] == "[REDACTED] used [REDACTED]"
+
+
+@pytest.mark.unit
+def test_report_workspace_generates_tracks_and_visually_approves_outputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audit = write_dashboard_fixture(tmp_path)
+    service = DashboardService(tmp_path)
+    initial = cast(dict[str, object], service.audit_detail(audit.audit_id)["report_workspace"])
+    assert initial["status"] == "blocked"
+
+    service.save_review(
+        audit.audit_id,
+        ReviewSubmission.model_validate(
+            {
+                "candidate_id": "AUTO-001",
+                "decision": "confirmed",
+                "rationale": "Reproduced against the controlled checkout fixture.",
+                "severity": "Major",
+                "category": "core-flows",
+                "steps": ["Open checkout", "Submit the order"],
+                "expected": "The order completes.",
+                "actual": "The request fails.",
+                "recommendation": "Repair checkout before launch.",
+            }
+        ),
+    )
+    missing = cast(dict[str, object], service.audit_detail(audit.audit_id)["report_workspace"])
+    assert missing["status"] == "missing"
+    saved = service.save_report_workspace(audit.audit_id, report_workspace_submission())
+    assert saved["status"] == "ready"
+
+    def fake_render(*_args: object, **kwargs: object) -> None:
+        Path(cast(str | Path, kwargs["html_path"])).write_text(
+            "<!doctype html><title>fixture</title>", encoding="utf-8"
+        )
+        Path(cast(str | Path, kwargs["pdf_path"])).write_bytes(b"%PDF-fixture")
+
+    def fake_verify(
+        _report: object,
+        _html_path: Path,
+        _pdf_path: Path,
+        *,
+        render_directory: Path,
+    ) -> VerificationResult:
+        render_directory.mkdir(parents=True)
+        page = render_directory / "page-1.png"
+        page.write_bytes(b"fixture-image")
+        return VerificationResult(
+            page_count=1,
+            page_images=(page,),
+            checks=(("Rendered pages", "One page rendered."),),
+        )
+
+    monkeypatch.setattr("ai_qa_engineering.dashboard.render_report_outputs", fake_render)
+    monkeypatch.setattr("ai_qa_engineering.dashboard.verify_report_outputs", fake_verify)
+
+    generated = service.generate_verified_report(audit.audit_id)
+    assert generated["status"] == "awaiting-visual-review"
+    verification = cast(dict[str, object], generated["verification"])
+    assert verification["score"] == 100
+    assert verification["recommendation"] == "LAUNCH WITH CONDITIONS"
+    directory = tmp_path / "artifacts/audits" / audit.audit_id
+    assert (directory / "verified-report-inputs.yaml").is_file()
+    assert "AUTO-001" in (directory / "verified-report-inputs.yaml").read_text(encoding="utf-8")
+
+    approved = service.approve_visual_report(
+        audit.audit_id,
+        VisualReviewSubmission(rationale="Every rendered page is readable and unclipped."),
+    )
+    assert approved["status"] == "verified"
+
+    changed = report_workspace_submission(title="Changed Launch Readiness Report")
+    stale = service.save_report_workspace(audit.audit_id, changed)
+    assert stale["status"] == "stale"
+    assert stale["can_approve_visual"] is False
+
+
+@pytest.mark.unit
+def test_report_workspace_rejects_mismatched_flow_definitions(tmp_path: Path) -> None:
+    audit = write_dashboard_fixture(tmp_path, with_candidate=False)
+    service = DashboardService(tmp_path)
+    workspace = report_workspace_submission()
+    incorrect_flow = workspace.critical_flows[0].model_copy(update={"name": "Different flow"})
+
+    with pytest.raises(ValueError, match="must match the definitions"):
+        service.save_report_workspace(
+            audit.audit_id,
+            workspace.model_copy(update={"critical_flows": (incorrect_flow,)}),
+        )

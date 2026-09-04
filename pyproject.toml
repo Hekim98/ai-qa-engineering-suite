@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-qa-engineering-suite"
-version = "0.4.0"
+version = "0.5.0"
 description = "Reusable quality-engineering foundations for AI-built software."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,6 +23,7 @@ dependencies = [
     "python-dotenv>=1.0,<2.0",
     "pytest>=8.0,<10.0",
     "pytest-playwright>=0.7,<1.0",
+    "pypdf>=5.0,<7.0",
     "PyYAML>=6.0,<7.0",
     "reportlab>=4.2,<5.0",
 ]
@@ -31,7 +32,6 @@ dependencies = [
 dev = [
     "mypy>=1.15,<2.0",
     "pytest-cov>=6.0,<8.0",
-    "pypdf>=5.0,<7.0",
     "ruff>=0.11,<1.0",
     "types-PyYAML>=6.0,<7.0",
     "types-reportlab>=4.4,<5.0",

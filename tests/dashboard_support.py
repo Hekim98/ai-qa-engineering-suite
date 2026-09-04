@@ -6,12 +6,20 @@ import yaml
 
 from ai_qa_engineering.audit_models import (
     AttemptSummary,
+    AuditedCriticalFlow,
     AuditResult,
     AuditStatus,
     CandidateFinding,
     CandidateStatus,
     ProfileAuditSummary,
     SecretPreflight,
+)
+from ai_qa_engineering.dashboard_models import ReportWorkspaceSubmission
+from ai_qa_engineering.reporting.models import (
+    AssessmentStatus,
+    CategoryAssessment,
+    CriticalFlowResult,
+    ScoreCategory,
 )
 from ai_qa_engineering.results import RunStatus
 
@@ -68,6 +76,8 @@ def write_dashboard_fixture(
     profile = ProfileAuditSummary(
         profile="desktop-chromium",
         browser="chromium",
+        device="Desktop",
+        suite="full",
         status=attempt_status,
         attempts=(attempt,),
         persistent_failures=(nodeid,) if with_candidate else (),
@@ -82,6 +92,13 @@ def write_dashboard_fixture(
         started_at=datetime(2026, 9, 4, 12, tzinfo=UTC),
         finished_at=datetime(2026, 9, 4, 12, 1, tzinfo=UTC),
         profiles=(profile,),
+        critical_flows=(
+            AuditedCriticalFlow(
+                id="FLOW-001",
+                name="Complete checkout",
+                description="A customer can complete the primary checkout journey.",
+            ),
+        ),
         candidate_findings=candidates,
         total_tests=1,
         passed_tests=0 if with_candidate else 1,
@@ -114,3 +131,32 @@ def write_dashboard_fixture(
     )
     (report_directory / "draft-audit-report.pdf").write_bytes(b"%PDF-fixture")
     return audit
+
+
+def report_workspace_submission(
+    *,
+    title: str = "Dashboard Fixture Launch Readiness Report",
+) -> ReportWorkspaceSubmission:
+    return ReportWorkspaceSubmission(
+        title=title,
+        executive_summary=(
+            "The verified local audit supports a launch decision based on the reviewed evidence."
+        ),
+        assessments=tuple(
+            CategoryAssessment(
+                category=category,
+                status=AssessmentStatus.PASS,
+                rationale=f"Verified evidence supports {category.value}.",
+            )
+            for category in ScoreCategory
+        ),
+        critical_flows=(
+            CriticalFlowResult(
+                id="FLOW-001",
+                name="Complete checkout",
+                status=AssessmentStatus.PASS,
+                evidence="The primary automated journey passed in Chromium.",
+            ),
+        ),
+        limitations=("The fixture covers one controlled browser profile.",),
+    )

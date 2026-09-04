@@ -14,6 +14,7 @@ import yaml
 from ai_qa_engineering.artifacts import safe_slug
 from ai_qa_engineering.audit_models import (
     AttemptSummary,
+    AuditedCriticalFlow,
     AuditResult,
     AuditStatus,
     CandidateFinding,
@@ -266,6 +267,10 @@ def run_audit(
             ProfileAuditSummary(
                 profile=initial_execution.profile,
                 browser=browser,
+                device="Mobile"
+                if config.browser.profiles[initial_execution.profile].mobile
+                else "Desktop",
+                suite=config.browser.profiles[initial_execution.profile].suite.value,
                 status=profile_status,
                 attempts=tuple(attempts),
                 persistent_failures=tuple(sorted(persistent)),
@@ -338,6 +343,14 @@ def run_audit(
         started_at=started_at,
         finished_at=datetime.now(UTC),
         profiles=tuple(profile_summaries),
+        critical_flows=tuple(
+            AuditedCriticalFlow(
+                id=flow.id,
+                name=flow.name,
+                description=flow.description,
+            )
+            for flow in config.critical_flows
+        ),
         candidate_findings=tuple(candidates),
         total_tests=sum(attempt.test_count for attempt in final_attempts),
         passed_tests=sum(attempt.passed for attempt in final_attempts),
