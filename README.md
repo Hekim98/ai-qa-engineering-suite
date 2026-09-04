@@ -18,9 +18,9 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 8 completes the verified report workspace inside AI QA Control Room. Human-reviewed
-findings, category assessments, and critical-flow results now produce one deterministic score and
-matching HTML/PDF reports with automated and human visual verification.
+Milestone 9 adds reusable API and cross-channel workflow QA. Status, Pydantic response-contract,
+latency, authentication, and negative-case checks now create redacted evidence that travels through
+the same audit, dashboard, human-review, and verified-report pipeline as browser evidence.
 
 ```text
 Core QA Engine
@@ -127,6 +127,21 @@ It runs the complete authenticated suite in desktop Chromium and critical smoke 
 mobile Chromium, Firefox, and WebKit. Browser session state is held in an auto-deleted private
 temporary directory and never enters audit artifacts. See
 [Authenticated Journeys](docs/AUTHENTICATED_JOURNEYS.md).
+
+## Controlled API and workflow audit
+
+The localhost-only workflow sandbox proves authenticated API contracts and an order lifecycle that
+moves from API creation to browser approval and back to API fulfillment:
+
+```bash
+cp .env.example .env
+ai-qa audit configs/workflow-sandbox.yaml
+```
+
+Every request checks expected status and latency; selected responses are validated with strict
+Pydantic models. Evidence masks authentication headers and sensitive JSON fields. Connection and
+timeout errors make the audit `incomplete` instead of creating product findings. See
+[API and Workflow QA](docs/API_WORKFLOW_QA.md).
 
 ## SauceDemo portfolio audit
 

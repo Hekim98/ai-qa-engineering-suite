@@ -30,6 +30,7 @@ jobs:
       AUTH_SANDBOX_ADMIN_PASSWORD: admin-pass
       AUTH_SANDBOX_LOCKED_USERNAME: locked@example.test
       AUTH_SANDBOX_LOCKED_PASSWORD: locked-pass
+      WORKFLOW_SANDBOX_API_TOKEN: workflow-sandbox-token
     steps:
       - name: Check out repository
         uses: actions/checkout@v6

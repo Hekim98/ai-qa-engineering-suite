@@ -1,0 +1,49 @@
+project:
+  name: api-workflow-sandbox
+  base_url: http://127.0.0.1:8771
+  environment: controlled-local-sandbox
+  tests_path: tests/workflow_sandbox
+
+api:
+  base_url: http://127.0.0.1:8771
+  auth:
+    kind: bearer
+    token_env: WORKFLOW_SANDBOX_API_TOKEN
+  timeout_seconds: 3
+  default_latency_budget_ms: 500
+  max_response_bytes: 100000
+
+browser:
+  profiles:
+    desktop-chromium:
+      engine: chromium
+      suite: full
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+
+artifacts:
+  root_dir: artifacts/runs
+  screenshot: on-failure
+  video: on-failure
+  trace: on-failure
+
+network:
+  capture_console_errors: true
+  capture_failed_requests: true
+  allowlist: []
+
+security:
+  sensitive_selectors: []
+
+critical_flows:
+  - id: API-001
+    name: API contracts remain stable
+    description: Authenticated endpoints return expected statuses, schemas, and latency.
+  - id: API-002
+    name: Negative cases fail safely
+    description: Missing authentication, unknown records, and invalid input are rejected predictably.
+  - id: WORKFLOW-001
+    name: Order lifecycle crosses API and browser
+    description: API-created state is visible and mutable through the browser before API fulfillment.

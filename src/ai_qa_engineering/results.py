@@ -25,6 +25,12 @@ class RunStatus(StrEnum):
     INCOMPLETE = "incomplete"
 
 
+class APICheckOutcome(StrEnum):
+    PASSED = "passed"
+    FAILED = "failed"
+    INCOMPLETE = "incomplete"
+
+
 class ConsoleRecord(ResultModel):
     level: str
     text: str
@@ -45,8 +51,24 @@ class TestResult(ResultModel):
     error: str | None = None
 
 
+class APICheckRecord(ResultModel):
+    name: str
+    test: str
+    method: str
+    path: str
+    expected_statuses: tuple[int, ...]
+    actual_status: int | None = None
+    latency_ms: float | None = None
+    latency_budget_ms: int
+    response_schema: str | None = None
+    schema_valid: bool | None = None
+    outcome: APICheckOutcome
+    evidence: str
+    failure_reason: str | None = None
+
+
 class RunResult(ResultModel):
-    schema_version: int = 1
+    schema_version: int = 2
     run_id: str
     project: str
     environment: str
@@ -59,5 +81,6 @@ class RunResult(ResultModel):
     tests: tuple[TestResult, ...]
     console_errors: tuple[ConsoleRecord, ...] = ()
     failed_requests: tuple[NetworkRecord, ...] = ()
+    api_checks: tuple[APICheckRecord, ...] = ()
     artifacts: tuple[str, ...] = ()
     incomplete_reason: str | None = None

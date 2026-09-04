@@ -161,3 +161,97 @@ def test_authenticated_sandbox_audit_restores_sessions_without_leaking_secrets(
     for secret in secrets.values():
         assert secret not in persisted_text
     assert not list(audit_directory.rglob("member.json"))
+
+
+@pytest.mark.integration
+def test_api_workflow_sandbox_feeds_safe_evidence_into_audit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository_root = Path.cwd()
+    token = "workflow-sandbox-token"
+    monkeypatch.setenv("WORKFLOW_SANDBOX_API_TOKEN", token)
+
+    outputs = run_audit(
+        "configs/workflow-sandbox.yaml",
+        profile_names=["desktop-chromium"],
+        repository_root=repository_root,
+        retry_failures=False,
+    )
+
+    assert outputs.audit.status is AuditStatus.PASSED
+    assert outputs.audit.total_tests == 2
+    assert outputs.audit.passed_tests == 2
+    assert len(outputs.audit.api_checks) == 8
+    assert all(check.outcome.value == "passed" for check in outputs.audit.api_checks)
+    assert all(
+        (repository_root / check.evidence).is_relative_to(outputs.audit_directory)
+        for check in outputs.audit.api_checks
+    )
+    assert outputs.audit.profiles[0].api_checks == 8
+    assert outputs.audit.profiles[0].api_passed == 8
+    assert outputs.audit.secret_preflight.api_authentication_configured is True
+    assert "API contract and workflow coverage" in outputs.html_report.read_text(encoding="utf-8")
+    persisted = "\n".join(
+        path.read_text(encoding="utf-8", errors="ignore")
+        for path in outputs.audit_directory.rglob("*")
+        if path.is_file()
+    )
+    assert token not in persisted
+    assert "must-not-persist" not in persisted
+    assert "[REDACTED]" in persisted
+
+
+@pytest.mark.integration
+def test_unreachable_api_marks_audit_incomplete_without_a_product_candidate(
+    tmp_path: Path,
+) -> None:
+    tests_dir = tmp_path / "tests/api_client"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "test_unavailable.py").write_text(
+        """
+import pytest
+
+
+@pytest.mark.full
+def test_api_is_reachable(api_client):
+    api_client.check("API health", "GET", "/health", expected_status=200)
+""".strip(),
+        encoding="utf-8",
+    )
+    config = tmp_path / "config.yaml"
+    config.write_text(
+        """
+project:
+  name: unavailable-api-fixture
+  base_url: http://127.0.0.1:1
+  environment: local
+  tests_path: tests/api_client
+api:
+  base_url: http://127.0.0.1:1
+  timeout_seconds: 0.2
+browser:
+  profiles:
+    desktop-chromium:
+      engine: chromium
+      suite: full
+      viewport: {width: 1024, height: 768}
+artifacts:
+  root_dir: artifacts/runs
+critical_flows:
+  - id: API-001
+    name: API is reachable
+    description: The configured API responds to health checks.
+""".strip(),
+        encoding="utf-8",
+    )
+
+    outputs = run_audit(
+        config,
+        repository_root=tmp_path,
+        retry_failures=False,
+    )
+
+    assert outputs.audit.status is AuditStatus.INCOMPLETE
+    assert outputs.audit.candidate_findings == ()
+    assert outputs.audit.api_checks[0].outcome.value == "incomplete"
+    assert outputs.audit.api_checks[0].actual_status is None

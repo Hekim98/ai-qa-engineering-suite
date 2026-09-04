@@ -32,6 +32,13 @@ class EvidencePolicy(StrEnum):
     OFF = "off"
 
 
+class APIAuthKind(StrEnum):
+    NONE = "none"
+    BEARER = "bearer"
+    API_KEY = "api-key"
+    BASIC = "basic"
+
+
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -123,6 +130,67 @@ class NetworkSettings(StrictModel):
     allowlist: tuple[str, ...] = ()
 
 
+class APIAuthSettings(StrictModel):
+    kind: APIAuthKind = APIAuthKind.NONE
+    token_env: str | None = Field(default=None, pattern=r"^[A-Z][A-Z0-9_]*$")
+    username_env: str | None = Field(default=None, pattern=r"^[A-Z][A-Z0-9_]*$")
+    password_env: str | None = Field(default=None, pattern=r"^[A-Z][A-Z0-9_]*$")
+    header_name: str | None = Field(default=None, pattern=r"^[A-Za-z][A-Za-z0-9-]*$")
+
+    @model_validator(mode="after")
+    def validate_auth_contract(self) -> Self:
+        supplied = {
+            "token_env": self.token_env,
+            "username_env": self.username_env,
+            "password_env": self.password_env,
+            "header_name": self.header_name,
+        }
+        required: dict[APIAuthKind, set[str]] = {
+            APIAuthKind.NONE: set(),
+            APIAuthKind.BEARER: {"token_env"},
+            APIAuthKind.API_KEY: {"token_env", "header_name"},
+            APIAuthKind.BASIC: {"username_env", "password_env"},
+        }
+        expected = required[self.kind]
+        present = {name for name, value in supplied.items() if value is not None}
+        if present != expected:
+            names = ", ".join(sorted(expected)) or "no secret fields"
+            raise ValueError(f"api.auth kind '{self.kind.value}' requires exactly: {names}")
+        if self.header_name and self.header_name.lower() in {
+            "host",
+            "content-length",
+            "cookie",
+            "set-cookie",
+        }:
+            raise ValueError("api.auth.header_name cannot use a transport-controlled header")
+        return self
+
+
+class APISettings(StrictModel):
+    base_url: AnyHttpUrl
+    auth: APIAuthSettings = APIAuthSettings()
+    timeout_seconds: float = Field(default=5.0, gt=0, le=60)
+    default_latency_budget_ms: int = Field(default=1_000, gt=0, le=60_000)
+    max_response_bytes: int = Field(default=1_000_000, ge=1_024, le=10_000_000)
+    sensitive_fields: tuple[str, ...] = (
+        "password",
+        "token",
+        "access_token",
+        "refresh_token",
+        "secret",
+        "authorization",
+        "cookie",
+        "set-cookie",
+    )
+
+    @field_validator("sensitive_fields")
+    @classmethod
+    def validate_sensitive_fields(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        if any(not item.strip() for item in value):
+            raise ValueError("api.sensitive_fields cannot contain blank names")
+        return tuple(dict.fromkeys(item.casefold() for item in value))
+
+
 class SecuritySettings(StrictModel):
     sensitive_selectors: tuple[str, ...] = ()
 
@@ -156,6 +224,7 @@ class QAConfig(StrictModel):
     browser: BrowserSettings
     artifacts: ArtifactSettings
     network: NetworkSettings = NetworkSettings()
+    api: APISettings | None = None
     security: SecuritySettings = SecuritySettings()
     orchestration: OrchestrationSettings = OrchestrationSettings()
     critical_flows: tuple[CriticalFlow, ...] = Field(min_length=1)

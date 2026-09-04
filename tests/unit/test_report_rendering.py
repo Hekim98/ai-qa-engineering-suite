@@ -69,6 +69,18 @@ def _write_inputs(root: Path, *, evidence_exists: bool = True) -> tuple[Path, Pa
                     "result": "passed with findings",
                 }
             ],
+            "api_coverage": [
+                {
+                    "name": "Create order",
+                    "profile": "desktop",
+                    "method": "POST",
+                    "path": "/api/orders",
+                    "status": "201 · passed",
+                    "latency_ms": 24.5,
+                    "latency_budget_ms": 500,
+                    "response_schema": "OrderResponse",
+                }
+            ],
             "limitations": ["Demo scope"],
             "allowlisted_observations": ["Third-party telemetry noise"],
         },
@@ -133,9 +145,11 @@ def test_renderers_use_same_validated_report(tmp_path: Path) -> None:
     assert "LAUNCH WITH CONDITIONS" in html
     assert "data:image/png;base64" in html
     assert "Detection Demonstration" in html
+    assert "API contract and workflow coverage" in html
     assert "Demo Launch Readiness Report" in pdf_text
     assert "LAUNCH WITH CONDITIONS" in pdf_text
     assert "Keyboard issue" in pdf_text
+    assert "Create order" in pdf_text
     assert pdf_path.stat().st_size > 1_000
 
 
@@ -167,11 +181,11 @@ def test_pdf_does_not_create_a_blank_findings_page(tmp_path: Path) -> None:
 
     render_pdf(report, pdf_path, repository_root=tmp_path)
 
-    pages = PdfReader(pdf_path).pages
-    last_page_text = pages[-1].extract_text() or ""
-    assert len(pages) == 3
-    assert "No verified readiness findings were recorded." in last_page_text
-    assert "Browser and device coverage" in last_page_text
+    page_texts = [page.extract_text() or "" for page in PdfReader(pdf_path).pages]
+    findings_page = next(
+        text for text in page_texts if "No verified readiness findings were recorded." in text
+    )
+    assert "Browser and device coverage" in findings_page
 
 
 @pytest.mark.unit

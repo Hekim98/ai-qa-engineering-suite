@@ -26,6 +26,15 @@ An automated failure is a candidate, not a verified defect. Persistent and flaky
 remain distinguishable. Neither may affect a published score or recommendation until a human has
 confirmed expected behavior, reproducibility, impact, and evidence.
 
+API evidence must identify the check, method, safe path, expected and actual status, response-model
+validation, measured latency and budget, and outcome. Authentication/cookie headers, configured
+secret values, and sensitive request/response fields must be replaced before persistence. Raw
+tokens, passwords, session cookies, and unrestricted response bodies are not acceptable evidence.
+
+Connection, DNS, timeout, and target-access failures are execution blockers. They mark the required
+run `incomplete` and do not become product findings. Expected negative responses such as 401, 404,
+409, or 422 are passing checks when their status and error contract match the declared expectation.
+
 ## Report publication standard
 
 - Every weighted category must have one explicit status and an evidence-based rationale.

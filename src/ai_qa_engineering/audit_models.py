@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ai_qa_engineering.results import RunStatus
+from ai_qa_engineering.results import APICheckOutcome, RunStatus
 
 
 class AuditModel(BaseModel):
@@ -48,6 +48,9 @@ class ProfileAuditSummary(AuditModel):
     attempts: tuple[AttemptSummary, ...] = Field(min_length=1, max_length=2)
     persistent_failures: tuple[str, ...] = ()
     flaky_tests: tuple[str, ...] = ()
+    api_checks: int = Field(default=0, ge=0)
+    api_passed: int = Field(default=0, ge=0)
+    api_failed: int = Field(default=0, ge=0)
 
 
 class CandidateFinding(AuditModel):
@@ -67,6 +70,7 @@ class SecretPreflight(AuditModel):
     account_names: tuple[str, ...] = ()
     required_environment_variables: tuple[str, ...] = ()
     screenshot_masking_configured: bool
+    api_authentication_configured: bool = False
 
 
 class AuditedCriticalFlow(AuditModel):
@@ -75,8 +79,25 @@ class AuditedCriticalFlow(AuditModel):
     description: str
 
 
+class AuditedAPICheck(AuditModel):
+    name: str
+    test: str
+    profile: str
+    method: str
+    path: str
+    expected_statuses: tuple[int, ...]
+    actual_status: int | None = None
+    latency_ms: float | None = None
+    latency_budget_ms: int
+    response_schema: str | None = None
+    schema_valid: bool | None = None
+    outcome: APICheckOutcome
+    evidence: Path
+    failure_reason: str | None = None
+
+
 class AuditResult(AuditModel):
-    schema_version: int = 2
+    schema_version: int = 3
     audit_id: str
     project: str
     environment: str
@@ -86,6 +107,7 @@ class AuditResult(AuditModel):
     finished_at: datetime
     profiles: tuple[ProfileAuditSummary, ...]
     critical_flows: tuple[AuditedCriticalFlow, ...] = ()
+    api_checks: tuple[AuditedAPICheck, ...] = ()
     candidate_findings: tuple[CandidateFinding, ...] = ()
     total_tests: int = Field(ge=0)
     passed_tests: int = Field(ge=0)

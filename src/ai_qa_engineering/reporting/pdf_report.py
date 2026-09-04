@@ -377,6 +377,41 @@ def render_pdf(report: LaunchReport, destination: Path, *, repository_root: Path
     )
     story.append(Paragraph(limitations, styles["body"]))
 
+    if report.metadata.api_coverage:
+        story.extend([PageBreak(), Paragraph("API contract and workflow coverage", styles["h1"])])
+        profiles = tuple(dict.fromkeys(check.profile for check in report.metadata.api_coverage))
+        for profile in profiles:
+            story.append(Paragraph(f"Profile: {escape(profile)}", styles["h2"]))
+            api_coverage: list[list[Any]] = [["Check", "Request", "Status", "Latency", "Schema"]]
+            for check in report.metadata.api_coverage:
+                if check.profile != profile:
+                    continue
+                latency = (
+                    f"{check.latency_ms:g} / {check.latency_budget_ms} ms"
+                    if check.latency_ms is not None
+                    else f"- / {check.latency_budget_ms} ms"
+                )
+                api_coverage.append(
+                    [
+                        Paragraph(escape(check.name), styles["small"]),
+                        Paragraph(
+                            f"{escape(check.method)}<br/>{escape(check.path)}", styles["small"]
+                        ),
+                        Paragraph(escape(check.status), styles["small"]),
+                        Paragraph(escape(latency), styles["small"]),
+                        Paragraph(escape(check.response_schema or "-"), styles["small"]),
+                    ]
+                )
+            story.extend(
+                [
+                    _table(
+                        api_coverage,
+                        [50 * mm, 42 * mm, 22 * mm, 25 * mm, 32 * mm],
+                    ),
+                    Spacer(1, 8 * mm),
+                ]
+            )
+
     if report.detection_findings:
         story.extend(
             [

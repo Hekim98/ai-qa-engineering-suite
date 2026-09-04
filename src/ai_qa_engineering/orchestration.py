@@ -14,6 +14,7 @@ import yaml
 from ai_qa_engineering.artifacts import safe_slug
 from ai_qa_engineering.audit_models import (
     AttemptSummary,
+    AuditedAPICheck,
     AuditedCriticalFlow,
     AuditResult,
     AuditStatus,
@@ -25,9 +26,14 @@ from ai_qa_engineering.audit_models import (
 from ai_qa_engineering.audit_reporting import render_draft_html, render_draft_pdf
 from ai_qa_engineering.config import QAConfig, load_config
 from ai_qa_engineering.paths import resolve_within
-from ai_qa_engineering.results import RunResult, RunStatus, TestOutcome
+from ai_qa_engineering.results import APICheckOutcome, RunResult, RunStatus, TestOutcome
 from ai_qa_engineering.runner import ProfileExecution, execute_profiles
-from ai_qa_engineering.secrets import configured_secret_names, resolve_accounts
+from ai_qa_engineering.secrets import (
+    configured_api_secret_names,
+    configured_secret_names,
+    resolve_accounts,
+    resolve_api_auth,
+)
 
 ProfileExecutor = Callable[..., tuple[ProfileExecution, ...]]
 FAILURE_OUTCOMES = {TestOutcome.FAILED, TestOutcome.ERROR}
@@ -149,17 +155,22 @@ def _attempt_evidence(
 
 
 def _secret_preflight(config: QAConfig, repository_root: Path) -> SecretPreflight:
-    if config.credentials is None:
-        return SecretPreflight(
-            configured=False,
-            screenshot_masking_configured=bool(config.security.sensitive_selectors),
-        )
-    accounts = resolve_accounts(config.credentials, env_file=repository_root / ".env")
+    accounts = (
+        resolve_accounts(config.credentials, env_file=repository_root / ".env")
+        if config.credentials is not None
+        else {}
+    )
+    api_auth = None
+    if config.api is not None:
+        api_auth = resolve_api_auth(config.api.auth, env_file=repository_root / ".env")
+    required = configured_secret_names(config.credentials) if config.credentials is not None else ()
+    required += configured_api_secret_names(config.api.auth if config.api else None)
     return SecretPreflight(
-        configured=True,
+        configured=bool(accounts or api_auth),
         account_names=tuple(accounts),
-        required_environment_variables=configured_secret_names(config.credentials),
+        required_environment_variables=required,
         screenshot_masking_configured=bool(config.security.sensitive_selectors),
+        api_authentication_configured=api_auth is not None,
     )
 
 
@@ -204,6 +215,7 @@ def run_audit(
         list[tuple[str, str, tuple[Path, ...]]],
     ] = defaultdict(list)
     evidence_records: list[dict[str, object]] = []
+    audited_api_checks: list[AuditedAPICheck] = []
 
     for initial_execution in initial_executions:
         initial_result = _load_result(initial_execution)
@@ -263,6 +275,9 @@ def run_audit(
             else RunStatus.PASSED
         )
         browser = config.browser.profiles[initial_execution.profile].engine.value
+        final_execution, final_result = executions_with_results[-1]
+        api_checks = final_result.api_checks if final_result else ()
+        api_failed = sum(check.outcome is APICheckOutcome.FAILED for check in api_checks)
         profile_summaries.append(
             ProfileAuditSummary(
                 profile=initial_execution.profile,
@@ -275,8 +290,19 @@ def run_audit(
                 attempts=tuple(attempts),
                 persistent_failures=tuple(sorted(persistent)),
                 flaky_tests=tuple(sorted(flaky)),
+                api_checks=len(api_checks),
+                api_passed=sum(check.outcome is APICheckOutcome.PASSED for check in api_checks),
+                api_failed=api_failed,
             )
         )
+        for check in api_checks:
+            audited_api_checks.append(
+                AuditedAPICheck(
+                    **check.model_dump(exclude={"evidence"}),
+                    profile=initial_execution.profile,
+                    evidence=_relative(final_execution.run_dir / check.evidence, root),
+                )
+            )
         all_evidence = tuple(
             dict.fromkeys(
                 evidence
@@ -284,14 +310,15 @@ def run_audit(
                 for evidence in _attempt_evidence(execution, result, repository_root=root)
             )
         )
-        for nodeid in persistent:
-            finding_groups[(nodeid, CandidateStatus.CANDIDATE)].append(
-                (initial_execution.profile, browser, all_evidence)
-            )
-        for nodeid in flaky:
-            finding_groups[(nodeid, CandidateStatus.FLAKY)].append(
-                (initial_execution.profile, browser, all_evidence)
-            )
+        if not incomplete:
+            for nodeid in persistent:
+                finding_groups[(nodeid, CandidateStatus.CANDIDATE)].append(
+                    (initial_execution.profile, browser, all_evidence)
+                )
+            for nodeid in flaky:
+                finding_groups[(nodeid, CandidateStatus.FLAKY)].append(
+                    (initial_execution.profile, browser, all_evidence)
+                )
         for execution, result in executions_with_results:
             evidence_records.append(
                 {
@@ -351,6 +378,7 @@ def run_audit(
             )
             for flow in config.critical_flows
         ),
+        api_checks=tuple(audited_api_checks),
         candidate_findings=tuple(candidates),
         total_tests=sum(attempt.test_count for attempt in final_attempts),
         passed_tests=sum(attempt.passed for attempt in final_attempts),

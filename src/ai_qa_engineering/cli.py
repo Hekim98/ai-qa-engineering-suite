@@ -71,6 +71,8 @@ def _validation_summary(config: QAConfig) -> str:
         "project": config.project.name,
         "environment": config.project.environment,
         "browser_profiles": sorted(config.browser.profiles),
+        "api_enabled": config.api is not None,
+        "api_authentication": config.api.auth.kind if config.api else None,
         "critical_flows": [flow.id for flow in config.critical_flows],
     }
     return json.dumps(payload, indent=2)
@@ -125,6 +127,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "persistent_failures": audit_outputs.audit.persistent_failures,
             "flaky_tests": audit_outputs.audit.flaky_tests,
             "candidate_findings": len(audit_outputs.audit.candidate_findings),
+            "api_checks": len(audit_outputs.audit.api_checks),
             "score": None,
             "recommendation": None,
             "audit_directory": str(audit_outputs.audit_directory),

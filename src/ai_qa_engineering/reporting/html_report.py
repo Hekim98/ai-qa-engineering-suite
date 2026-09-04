@@ -75,6 +75,23 @@ def render_html(report: LaunchReport, destination: Path, *, repository_root: Pat
         f"<td>{_escape(item.result)}</td></tr>"
         for item in report.metadata.browser_coverage
     )
+    api_rows = "".join(
+        f"<tr><td>{_escape(item.name)}</td><td>{_escape(item.profile)}</td>"
+        f"<td>{_escape(item.method)}</td><td><code>{_escape(item.path)}</code></td>"
+        f"<td>{_escape(item.status)}</td>"
+        f"<td>{_escape(item.latency_ms if item.latency_ms is not None else '—')} / "
+        f"{item.latency_budget_ms} ms</td>"
+        f"<td>{_escape(item.response_schema or 'Not requested')}</td></tr>"
+        for item in report.metadata.api_coverage
+    )
+    api_section = ""
+    if api_rows:
+        api_section = (
+            "<section><h2>API contract and workflow coverage</h2>"
+            "<table><thead><tr><th>Check</th><th>Profile</th><th>Method</th><th>Path</th>"
+            "<th>Status</th><th>Latency / budget</th><th>Schema</th></tr></thead>"
+            f"<tbody>{api_rows}</tbody></table></section>"
+        )
     limitations = "".join(f"<li>{_escape(item)}</li>" for item in report.metadata.limitations)
     observations = "".join(
         f"<li>{_escape(item)}</li>" for item in report.metadata.allowlisted_observations
@@ -152,6 +169,7 @@ def render_html(report: LaunchReport, destination: Path, *, repository_root: Pat
   <section><h2>Critical flows</h2><table><thead><tr><th>ID</th><th>Flow</th><th>Status</th><th>Evidence</th></tr></thead><tbody>{flow_rows}</tbody></table></section>
   <section><h2>Verified readiness findings</h2>{readiness_cards or "<p>No readiness findings.</p>"}</section>
   <section><h2>Browser and device coverage</h2><table><thead><tr><th>Profile</th><th>Browser</th><th>Device</th><th>Suite</th><th>Result</th></tr></thead><tbody>{coverage_rows}</tbody></table></section>
+  {api_section}
   <section><h2>Network and console observations</h2><ul>{observations or "<li>No allowlisted observations.</li>"}</ul></section>
   <section><h2>Limitations</h2><ul>{limitations}</ul></section>
   {detection_section}

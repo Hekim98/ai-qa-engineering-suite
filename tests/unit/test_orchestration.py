@@ -106,7 +106,7 @@ def test_audit_combines_profiles_and_classifies_persistent_and_flaky_failures(
     assert outputs.audit.status is AuditStatus.NEEDS_REVIEW
     assert outputs.audit.persistent_failures == 1
     assert outputs.audit.flaky_tests == 1
-    assert outputs.audit.schema_version == 2
+    assert outputs.audit.schema_version == 3
     assert [flow.id for flow in outputs.audit.critical_flows] == [
         "CATALOG-001",
         "PRODUCT-001",

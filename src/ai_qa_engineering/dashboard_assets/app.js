@@ -106,8 +106,22 @@ function profileRows(profiles) {
       <td>${latest?.passed ?? 0}/${latest?.test_count ?? 0}</td>
       <td>${profile.persistent_failures.length}</td>
       <td>${profile.flaky_tests.length}</td>
+      <td>${profile.api_passed ?? 0}/${profile.api_checks ?? 0}</td>
     </tr>`;
   }).join('');
+}
+
+function apiRows(checks) {
+  return checks.map((check) => `<tr>
+    <td><strong>${escapeHtml(check.name)}</strong><small>${escapeHtml(check.profile)}</small></td>
+    <td>${escapeHtml(check.method)}</td>
+    <td><code>${escapeHtml(check.path)}</code></td>
+    <td><span class="status ${escapeHtml(check.outcome)}">${escapeHtml(label(check.outcome))}</span></td>
+    <td>${check.actual_status ?? '—'}</td>
+    <td>${check.latency_ms ?? '—'} / ${check.latency_budget_ms} ms</td>
+    <td>${escapeHtml(check.response_schema || 'Not requested')}</td>
+    <td><a class="evidence-pill" href="${escapeHtml(check.evidence_url || '#')}" target="_blank" rel="noopener">API evidence</a></td>
+  </tr>`).join('');
 }
 
 function evidenceLinks(detail, paths) {
@@ -306,8 +320,11 @@ function renderDetail(detail) {
       <div class="report-links">${detail.reports.map((file) => `<a href="${escapeHtml(file.url)}" target="_blank" rel="noopener">Open ${escapeHtml(file.name.endsWith('.pdf') ? 'PDF' : 'HTML')} draft</a>`).join('')}</div>
     </section>
     <div class="detail-section"><div class="section-heading"><h3>Browser profiles</h3><span>${detail.profiles.length} profiles</span></div>
-      <div class="table-wrap"><table><thead><tr><th>Profile</th><th>Status</th><th>Attempts</th><th>Passed</th><th>Persistent</th><th>Flaky</th></tr></thead><tbody>${profileRows(detail.profiles)}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Profile</th><th>Status</th><th>Attempts</th><th>Passed</th><th>Persistent</th><th>Flaky</th><th>API passed</th></tr></thead><tbody>${profileRows(detail.profiles)}</tbody></table></div>
     </div>
+    ${audit.api_checks.length ? `<div class="detail-section"><div class="section-heading"><h3>API contract and workflow checks</h3><span>${audit.api_checks.length} checks</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Check</th><th>Method</th><th>Path</th><th>Outcome</th><th>Status</th><th>Latency / budget</th><th>Schema</th><th>Evidence</th></tr></thead><tbody>${apiRows(audit.api_checks)}</tbody></table></div>
+    </div>` : ''}
     <div class="detail-section"><div class="section-heading"><h3>Candidate review</h3><span>${summary.confirmed} confirmed · ${summary.rejected} rejected · ${summary.pending} pending</span></div>${candidates}</div>
     <div class="detail-section"><div class="section-heading"><h3>Evidence index</h3><span>Read-only</span></div>${evidence || '<p class="muted">No retained evidence files.</p>'}</div>
     ${reportWorkspace(detail)}

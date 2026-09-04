@@ -8,7 +8,9 @@ The suite separates reusable quality-engineering capabilities from client-specif
 
 ### 1. Core QA engine
 
-Owns typed configuration, secret resolution, safe paths, fixtures, browser lifecycle, assertions, logging, evidence capture, and network/console monitoring. Browser profiles run in isolated Pytest subprocesses so one failed browser cannot contaminate another profile.
+Owns typed configuration, secret resolution, safe paths, fixtures, browser and HTTP lifecycles,
+assertions, logging, evidence capture, and network/console monitoring. Browser profiles run in
+isolated Pytest subprocesses so one failed browser cannot contaminate another profile.
 
 ### 2. Reusable test packs
 
@@ -60,6 +62,14 @@ logical role rather than secret value.
 
 An unreachable environment or HTTP 5xx during guarded navigation marks the run `incomplete`; it is not silently converted into a product defect.
 
+Configured API checks use same-origin absolute paths only and never follow redirects automatically.
+Authentication values are resolved from environment-variable names, held in memory, and applied by
+the client unless a negative test explicitly omits them. Each request can assert an expected status,
+Pydantic response model, and latency budget. The evidence writer masks auth/cookie headers,
+configured secret values, and sensitive JSON fields before atomically persisting request/response
+summaries. A connection, DNS, or timeout failure raises `APIUnavailableError`, makes the profile and
+audit incomplete, and never enters the product-finding queue.
+
 ## Local review interface
 
 `ai-qa dashboard` adds a presentation layer over the same configuration and orchestration APIs.
@@ -85,9 +95,12 @@ by the CLI report path.
 
 Generated HTML and PDF files are not immediately considered verified. Structural and identity
 checks run first, `pdfinfo` confirms the PDF page count, and Poppler renders every page to PNG.
-Those images are exposed through the same evidence allowlist for human inspection. A final visual
-approval is stored beside the report. Any material workspace or finding change produces a new
-input hash and marks the prior report stale until regeneration.
+API contract coverage is derived from the immutable audit snapshot beside browser/device coverage,
+so the dashboard and both final report formats show the same checked endpoints, status outcomes,
+latency budgets, schemas, and evidence links. Report-page images are exposed through the same
+evidence allowlist for human inspection. A final visual approval is stored beside the report. Any
+material workspace or finding change produces a new input hash and marks the prior report stale
+until regeneration.
 
 ## Configuration boundary
 
@@ -102,6 +115,11 @@ The external-site workflow uses `workflow_dispatch` only. Push and pull-request 
 `configs/auth-sandbox.yaml` and `tests/auth_sandbox/` form the controlled authentication layer.
 Playwright intercepts its reserved `.test` origin and serves deterministic in-browser pages, so
 the multi-browser audit exercises sessions and role boundaries without external network access.
+
+`configs/workflow-sandbox.yaml` and `tests/workflow_sandbox/` form the controlled API/workflow
+layer. A real loopback HTTP server shares order state between authenticated API endpoints and a
+browser interface. This proves API-to-browser and browser-to-API state transitions without customer
+systems, external traffic, or production data.
 
 ## Report data contract
 

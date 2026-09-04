@@ -42,6 +42,7 @@ from ai_qa_engineering.dashboard_models import (
 from ai_qa_engineering.orchestration import AuditOutputs, run_audit
 from ai_qa_engineering.paths import UnsafePathError, resolve_within
 from ai_qa_engineering.reporting.models import (
+    APICoverage,
     AssessmentStatus,
     BrowserCoverage,
     Finding,
@@ -146,7 +147,8 @@ class DashboardService:
                     }
                     for name, profile in config.browser.profiles.items()
                 ],
-                "requires_credentials": config.credentials is not None,
+                "requires_credentials": config.credentials is not None
+                or bool(config.api and config.api.auth.kind.value != "none"),
             }
             for path, config in self._configurations()
         ]
@@ -298,6 +300,26 @@ class DashboardService:
             )
         return tuple(coverage)
 
+    @staticmethod
+    def _api_coverage(audit: AuditResult) -> tuple[APICoverage, ...]:
+        return tuple(
+            APICoverage(
+                name=check.name,
+                profile=check.profile,
+                method=check.method,
+                path=check.path,
+                status=(
+                    f"{check.actual_status} · {check.outcome.value}"
+                    if check.actual_status is not None
+                    else check.outcome.value
+                ),
+                latency_ms=check.latency_ms,
+                latency_budget_ms=check.latency_budget_ms,
+                response_schema=check.response_schema,
+            )
+            for check in audit.api_checks
+        )
+
     def _workspace_form(
         self,
         audit: AuditResult,
@@ -424,6 +446,7 @@ class DashboardService:
                 "assessments": workspace.assessments,
                 "critical_flows": workspace.critical_flows,
                 "browser_coverage": self._browser_coverage(audit),
+                "api_coverage": self._api_coverage(audit),
                 "limitations": workspace.limitations,
                 "allowlisted_observations": workspace.allowlisted_observations,
             }
@@ -678,8 +701,12 @@ class DashboardService:
                         ),
                     }
                 )
+        audit_payload = audit.model_dump(mode="json")
+        for check in audit_payload["api_checks"]:
+            if isinstance(check, dict) and isinstance(check.get("evidence"), str):
+                check["evidence_url"] = self._evidence_url(audit_id, check["evidence"])
         return {
-            "audit": audit.model_dump(mode="json"),
+            "audit": audit_payload,
             "profiles": [profile.model_dump(mode="json") for profile in audit.profiles],
             "candidates": candidates,
             "evidence": evidence,
@@ -936,6 +963,7 @@ class DashboardService:
             secret_values = available_secret_values(
                 config.credentials,
                 env_file=self.repository_root / ".env",
+                api_auth=config.api.auth if config.api else None,
             )
             with self._lock:
                 job.status = "failed"

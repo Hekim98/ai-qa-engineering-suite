@@ -4,8 +4,9 @@
 
 AI QA Control Room is a local interface for starting configured audits, watching their progress,
 reviewing browser coverage and retained evidence, and recording human decisions about automated
-failure candidates. It uses the existing audit engine rather than introducing a second execution
-path.
+failure candidates. API-enabled audits also show checked endpoints, status outcomes, schemas,
+latency budgets, and links to redacted request/response evidence. It uses the existing audit engine
+rather than introducing a second execution path.
 
 ## Start it
 

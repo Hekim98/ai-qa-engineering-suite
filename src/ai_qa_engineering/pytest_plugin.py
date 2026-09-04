@@ -14,16 +14,18 @@ from typing import Any
 import pytest
 from playwright.sync_api import BrowserContext, Page
 
+from ai_qa_engineering.api_testing import APIClient
 from ai_qa_engineering.auth import SessionStateStore
 from ai_qa_engineering.config import BrowserProfile, QAConfig, load_config
 from ai_qa_engineering.observability import BrowserObserver
-from ai_qa_engineering.results import RunResult, RunStatus, TestOutcome, TestResult
+from ai_qa_engineering.results import APICheckRecord, RunResult, RunStatus, TestOutcome, TestResult
 from ai_qa_engineering.secrets import (
     MissingSecretError,
     ResolvedCredentials,
     available_secret_values,
     redact_text,
     resolve_accounts,
+    resolve_api_auth,
     resolve_credentials,
 )
 
@@ -38,6 +40,7 @@ class RunRecorder:
     tests: list[TestResult] = field(default_factory=list)
     console_errors: list[Any] = field(default_factory=list)
     failed_requests: list[Any] = field(default_factory=list)
+    api_checks: list[APICheckRecord] = field(default_factory=list)
     incomplete_reason: str | None = None
     secret_values: tuple[str, ...] = field(default_factory=tuple, repr=False)
 
@@ -180,13 +183,43 @@ def _safe_test_name(nodeid: str) -> str:
 
 
 @pytest.fixture
+def api_client(
+    qa_config: QAConfig,
+    qa_run_dir: Path,
+    request: pytest.FixtureRequest,
+) -> Generator[APIClient, None, None]:
+    """Provide a same-origin API checker that records redacted evidence per test."""
+    if qa_config.api is None:
+        raise pytest.UsageError("This test requests api_client, but the configuration has no api")
+    reference = Path("api") / f"{_safe_test_name(request.node.nodeid)}.json"
+    auth = resolve_api_auth(qa_config.api.auth)
+    client = APIClient(
+        qa_config.api,
+        test_id=request.node.nodeid,
+        evidence_path=qa_run_dir / reference,
+        evidence_reference=str(reference),
+        auth=auth,
+        secret_values=available_secret_values(
+            qa_config.credentials,
+            api_auth=qa_config.api.auth,
+        ),
+    )
+    yield client
+    if _ACTIVE_RECORDER is not None:
+        _ACTIVE_RECORDER.api_checks.extend(client.records)
+
+
+@pytest.fixture
 def browser_observer(
     qa_page: Page,
     qa_config: QAConfig,
     request: pytest.FixtureRequest,
     pytestconfig: pytest.Config,
 ) -> Generator[BrowserObserver, None, None]:
-    secret_values = available_secret_values(qa_config.credentials)
+    secret_values = available_secret_values(
+        qa_config.credentials,
+        api_auth=qa_config.api.auth if qa_config.api else None,
+    )
     observer = BrowserObserver(
         qa_config.network.allowlist,
         capture_console_errors=qa_config.network.capture_console_errors,
@@ -224,7 +257,10 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         config=qa_config,
         profile_name=str(profile_name),
         run_dir=Path(run_dir),
-        secret_values=available_secret_values(qa_config.credentials),
+        secret_values=available_secret_values(
+            qa_config.credentials,
+            api_auth=qa_config.api.auth if qa_config.api else None,
+        ),
     )
 
 
@@ -241,7 +277,7 @@ def pytest_runtest_logreport(report: pytest.TestReport) -> None:
     error = str(report.longrepr) if report.failed else None
     if error:
         error = redact_text(error, _ACTIVE_RECORDER.secret_values)
-    if error and "TargetUnavailableError" in error:
+    if error and ("TargetUnavailableError" in error or "APIUnavailableError" in error):
         _ACTIVE_RECORDER.incomplete_reason = error.splitlines()[-1]
     _ACTIVE_RECORDER.tests.append(
         TestResult(
@@ -292,6 +328,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         tests=tuple(recorder.tests),
         console_errors=tuple(recorder.console_errors),
         failed_requests=tuple(recorder.failed_requests),
+        api_checks=tuple(recorder.api_checks),
         artifacts=artifacts,
         incomplete_reason=recorder.incomplete_reason,
     )

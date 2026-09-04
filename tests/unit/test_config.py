@@ -2,7 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from ai_qa_engineering.config import ConfigError, EvidencePolicy, SuiteLevel, load_config
+from ai_qa_engineering.config import (
+    APIAuthKind,
+    ConfigError,
+    EvidencePolicy,
+    SuiteLevel,
+    load_config,
+)
 
 
 @pytest.mark.unit
@@ -37,6 +43,27 @@ def test_loads_public_project_without_credentials() -> None:
     assert config.project.name == "qa-practice-store"
     assert config.credentials is None
     assert len(config.critical_flows) == 5
+
+
+@pytest.mark.unit
+def test_loads_controlled_api_workflow_configuration() -> None:
+    config = load_config(Path("configs/workflow-sandbox.yaml"))
+
+    assert config.api is not None
+    assert config.api.auth.kind is APIAuthKind.BEARER
+    assert config.api.auth.token_env == "WORKFLOW_SANDBOX_API_TOKEN"
+    assert config.api.default_latency_budget_ms == 500
+    assert config.project.tests_path == Path("tests/workflow_sandbox")
+
+
+@pytest.mark.unit
+def test_rejects_api_auth_fields_that_do_not_match_kind(tmp_path: Path) -> None:
+    config_file = tmp_path / "invalid-api.yaml"
+    content = Path("configs/workflow-sandbox.yaml").read_text(encoding="utf-8")
+    config_file.write_text(content.replace("kind: bearer", "kind: none"), encoding="utf-8")
+
+    with pytest.raises(ConfigError, match="requires exactly"):
+        load_config(config_file)
 
 
 @pytest.mark.unit

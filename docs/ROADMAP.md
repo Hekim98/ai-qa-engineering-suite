@@ -89,11 +89,23 @@ score, matching final reports, automated verification results, and visual-review
 
 ## Milestone 9 — API and workflow QA
 
-- [ ] Add reusable HTTP API checks with safe authentication and redaction
-- [ ] Validate schemas, status behavior, latency budgets, and negative cases
-- [ ] Exercise multi-step business workflows across browser and API boundaries
-- [ ] Feed API evidence into the same audit, review, and report contracts
-- [ ] Prove the layer against a controlled local API sandbox
+- [x] Add reusable HTTP API checks with safe authentication and redaction
+- [x] Validate schemas, status behavior, latency budgets, and negative cases
+- [x] Exercise multi-step business workflows across browser and API boundaries
+- [x] Feed API evidence into the same audit, review, and report contracts
+- [x] Prove the layer against a controlled local API sandbox
+
+Exit condition: a controlled audit proves authenticated API contracts and a browser/API business
+workflow while retaining redacted request/response evidence and treating access failures as
+incomplete execution rather than product defects.
+
+## Milestone 10 — Evidence-grounded assisted analysis
+
+- [ ] Build a provider-neutral analysis contract over verified browser and API evidence
+- [ ] Produce schema-constrained draft finding summaries with explicit evidence references
+- [ ] Redact and minimize evidence before any optional external model request
+- [ ] Require human acceptance or rejection; never let assisted text change score automatically
+- [ ] Evaluate accuracy and unsupported-claim rejection against controlled local fixtures
 
 ## Deferred market validation
 
@@ -102,5 +114,5 @@ technical workflow is ready for the desired level of independent use.
 
 ## Later phases
 
-AI-assisted finding analysis, AI-feature evaluation, AI-agent reliability evaluation, continuous
-release QA, and later a potential hosted product layer.
+AI-feature evaluation, AI-agent reliability evaluation, continuous release QA, and later a
+potential hosted product layer.

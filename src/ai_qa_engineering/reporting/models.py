@@ -83,6 +83,17 @@ class BrowserCoverage(ReportModel):
     result: str = Field(min_length=1)
 
 
+class APICoverage(ReportModel):
+    name: str = Field(min_length=1)
+    profile: str = Field(min_length=1)
+    method: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+    status: str = Field(min_length=1)
+    latency_ms: float | None = None
+    latency_budget_ms: int = Field(gt=0)
+    response_schema: str | None = None
+
+
 class ReportMetadata(ReportModel):
     title: str = Field(min_length=1)
     project: str = Field(min_length=1)
@@ -92,6 +103,7 @@ class ReportMetadata(ReportModel):
     assessments: tuple[CategoryAssessment, ...]
     critical_flows: tuple[CriticalFlowResult, ...] = Field(min_length=1)
     browser_coverage: tuple[BrowserCoverage, ...] = Field(min_length=1)
+    api_coverage: tuple[APICoverage, ...] = ()
     limitations: tuple[str, ...] = Field(min_length=1)
     allowlisted_observations: tuple[str, ...] = ()
 

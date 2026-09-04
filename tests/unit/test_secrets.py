@@ -2,13 +2,20 @@ from pathlib import Path
 
 import pytest
 
-from ai_qa_engineering.config import CredentialAccountSettings, CredentialSettings
+from ai_qa_engineering.config import (
+    APIAuthKind,
+    APIAuthSettings,
+    CredentialAccountSettings,
+    CredentialSettings,
+)
 from ai_qa_engineering.secrets import (
     MissingSecretError,
     available_secret_values,
+    configured_api_secret_names,
     configured_secret_names,
     redact_text,
     resolve_accounts,
+    resolve_api_auth,
     resolve_credentials,
 )
 
@@ -93,3 +100,19 @@ def test_resolves_named_accounts_and_redacts_all_available_values(tmp_path: Path
         "AI_QA_ADMIN_PASSWORD",
     )
     assert redacted == "[REDACTED] used [REDACTED]; [REDACTED] used [REDACTED]"
+
+
+@pytest.mark.unit
+def test_resolves_api_bearer_auth_and_includes_it_in_redaction(tmp_path: Path) -> None:
+    auth = APIAuthSettings(kind=APIAuthKind.BEARER, token_env="CLIENT_API_TOKEN")
+    env_file = tmp_path / ".env"
+    env_file.write_text("CLIENT_API_TOKEN=private-api-token\n", encoding="utf-8")
+
+    resolved = resolve_api_auth(auth, env_file=env_file)
+    values = available_secret_values(None, env_file=env_file, api_auth=auth)
+
+    assert resolved is not None
+    assert resolved.header_name == "Authorization"
+    assert resolved.header_value.get_secret_value() == "Bearer private-api-token"
+    assert configured_api_secret_names(auth) == ("CLIENT_API_TOKEN",)
+    assert redact_text("Bearer private-api-token", values) == "Bearer [REDACTED]"

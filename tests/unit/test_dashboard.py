@@ -53,6 +53,10 @@ def test_dashboard_lists_configs_audits_evidence_and_report_gate(tmp_path: Path)
     path, content_type = service.open_evidence(audit.audit_id, files[0]["path"])
     assert path.name == "run.json"
     assert content_type == "text/plain; charset=utf-8"
+    audit_payload = cast(dict[str, object], detail["audit"])
+    api_checks = cast(list[dict[str, object]], audit_payload["api_checks"])
+    assert api_checks[0]["response_schema"] == "CheckoutResponse"
+    assert str(api_checks[0]["evidence_url"]).startswith("/api/evidence/")
 
     with pytest.raises(DashboardNotFoundError, match="Evidence file not found"):
         service.open_evidence(audit.audit_id, "../../.env")

@@ -49,6 +49,25 @@ def render_draft_html(audit: AuditResult, destination: Path) -> None:
         )
         or "<li>No automated failure candidates were produced.</li>"
     )
+    api_rows = "".join(
+        "<tr>"
+        f"<td>{escape(item.name)}</td><td>{escape(item.profile)}</td>"
+        f"<td>{escape(item.method)}</td><td><code>{escape(item.path)}</code></td>"
+        f"<td>{escape(item.outcome.value)}</td>"
+        f"<td>{item.latency_ms if item.latency_ms is not None else '—'} / "
+        f"{item.latency_budget_ms} ms</td>"
+        f"<td>{escape(item.response_schema or 'Not requested')}</td>"
+        "</tr>"
+        for item in audit.api_checks
+    )
+    api_section = ""
+    if api_rows:
+        api_section = (
+            "<section><h2>API contract and workflow coverage</h2><table><thead><tr>"
+            "<th>Check</th><th>Profile</th><th>Method</th><th>Path</th><th>Outcome</th>"
+            "<th>Latency / budget</th><th>Schema</th></tr></thead>"
+            f"<tbody>{api_rows}</tbody></table></section>"
+        )
     document = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -87,6 +106,7 @@ def render_draft_html(audit: AuditResult, destination: Path) -> None:
       <div class="metric"><strong>{audit.passed_tests}</strong>passed</div>
       <div class="metric"><strong>{audit.persistent_failures}</strong>persistent failures</div>
       <div class="metric"><strong>{audit.flaky_tests}</strong>flaky tests</div>
+      <div class="metric"><strong>{len(audit.api_checks)}</strong>API checks</div>
     </div>
   </section>
   <section><h2>Browser profiles</h2>
@@ -94,6 +114,7 @@ def render_draft_html(audit: AuditResult, destination: Path) -> None:
     <tbody>{rows}</tbody></table>
   </section>
   <section><h2>Candidate findings</h2><ul>{findings}</ul></section>
+  {api_section}
 </main></body></html>"""
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(document, encoding="utf-8")
@@ -125,7 +146,7 @@ def render_draft_pdf(audit: AuditResult, destination: Path) -> None:
         Paragraph(
             f"Tests: {audit.total_tests} - Passed: {audit.passed_tests} - "
             f"Persistent failures: {audit.persistent_failures} - "
-            f"Flaky tests: {audit.flaky_tests}",
+            f"Flaky tests: {audit.flaky_tests} - API checks: {len(audit.api_checks)}",
             styles["BodyText"],
         ),
         Spacer(1, 12),
@@ -181,6 +202,43 @@ def render_draft_pdf(audit: AuditResult, destination: Path) -> None:
     else:
         story.append(
             Paragraph("No automated failure candidates were produced.", styles["BodyText"])
+        )
+    if audit.api_checks:
+        story.extend([Spacer(1, 12), Paragraph("API contract coverage", styles["Heading2"])])
+        api_rows: list[list[str]] = [
+            ["Check", "Profile", "Method", "Path", "Outcome", "Latency / budget"]
+        ]
+        api_rows.extend(
+            [
+                item.name,
+                item.profile,
+                item.method,
+                item.path,
+                item.outcome.value,
+                (
+                    f"{item.latency_ms:g} / {item.latency_budget_ms} ms"
+                    if item.latency_ms is not None
+                    else f"- / {item.latency_budget_ms} ms"
+                ),
+            ]
+            for item in audit.api_checks
+        )
+        story.append(
+            Table(
+                api_rows,
+                colWidths=[38 * mm, 28 * mm, 16 * mm, 38 * mm, 23 * mm, 27 * mm],
+                repeatRows=1,
+                style=TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#136F52")),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D8E1DD")),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 6.5),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ]
+                ),
+            )
         )
     destination.parent.mkdir(parents=True, exist_ok=True)
     document.build(story, onFirstPage=_draft_footer, onLaterPages=_draft_footer)

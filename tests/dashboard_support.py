@@ -6,6 +6,7 @@ import yaml
 
 from ai_qa_engineering.audit_models import (
     AttemptSummary,
+    AuditedAPICheck,
     AuditedCriticalFlow,
     AuditResult,
     AuditStatus,
@@ -21,7 +22,7 @@ from ai_qa_engineering.reporting.models import (
     CriticalFlowResult,
     ScoreCategory,
 )
-from ai_qa_engineering.results import RunStatus
+from ai_qa_engineering.results import APICheckOutcome, RunStatus
 
 
 def write_dashboard_fixture(
@@ -44,6 +45,10 @@ def write_dashboard_fixture(
     run_json = run_directory / "run.json"
     run_json.write_text('{"fixture": true}', encoding="utf-8")
     evidence_path = run_json.relative_to(root)
+    api_evidence = run_directory / "api/check.json"
+    api_evidence.parent.mkdir()
+    api_evidence.write_text('{"authorization":"[REDACTED]"}', encoding="utf-8")
+    api_evidence_path = api_evidence.relative_to(root)
     nodeid = "tests/example.py::test_checkout"
     candidates = (
         (
@@ -81,6 +86,8 @@ def write_dashboard_fixture(
         status=attempt_status,
         attempts=(attempt,),
         persistent_failures=(nodeid,) if with_candidate else (),
+        api_checks=1,
+        api_passed=1,
     )
     resolved_status = status or (AuditStatus.NEEDS_REVIEW if with_candidate else AuditStatus.PASSED)
     audit = AuditResult(
@@ -97,6 +104,23 @@ def write_dashboard_fixture(
                 id="FLOW-001",
                 name="Complete checkout",
                 description="A customer can complete the primary checkout journey.",
+            ),
+        ),
+        api_checks=(
+            AuditedAPICheck(
+                name="Read checkout",
+                test=nodeid,
+                profile="desktop-chromium",
+                method="GET",
+                path="/api/checkout",
+                expected_statuses=(200,),
+                actual_status=200,
+                latency_ms=12.5,
+                latency_budget_ms=500,
+                response_schema="CheckoutResponse",
+                schema_valid=True,
+                outcome=APICheckOutcome.PASSED,
+                evidence=api_evidence_path,
             ),
         ),
         candidate_findings=candidates,
@@ -116,7 +140,7 @@ def write_dashboard_fixture(
                 {
                     "profile": "desktop-chromium",
                     "run_id": "run-one",
-                    "files": [str(evidence_path)],
+                    "files": [str(evidence_path), str(api_evidence_path)],
                 }
             ]
         ),

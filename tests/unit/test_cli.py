@@ -20,6 +20,7 @@ def test_validate_command_returns_machine_readable_summary(
     assert exit_code == 0
     assert '"status": "valid"' in output.out
     assert '"desktop-chromium"' in output.out
+    assert '"api_enabled": false' in output.out
     assert output.err == ""
 
 
@@ -116,6 +117,7 @@ def test_audit_command_prints_combined_summary_and_review_exit_code(
         persistent_failures=1,
         flaky_tests=0,
         candidate_findings=(object(),),
+        api_checks=(),
     )
     outputs = SimpleNamespace(
         audit=audit,
@@ -131,6 +133,7 @@ def test_audit_command_prints_combined_summary_and_review_exit_code(
     assert exit_code == 1
     assert '"status": "needs-review"' in output.out
     assert '"candidate_findings": 1' in output.out
+    assert '"api_checks": 0' in output.out
     assert '"score": null' in output.out
 
 
