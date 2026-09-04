@@ -8,11 +8,13 @@ from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 import pytest
 from playwright.sync_api import BrowserContext, Page
 
+from ai_qa_engineering.auth import SessionStateStore
 from ai_qa_engineering.config import BrowserProfile, QAConfig, load_config
 from ai_qa_engineering.observability import BrowserObserver
 from ai_qa_engineering.results import RunResult, RunStatus, TestOutcome, TestResult
@@ -131,25 +133,46 @@ def qa_run_dir(pytestconfig: pytest.Config) -> Path:
 
 
 @pytest.fixture
-def qa_page(
+def qa_context_factory(
     new_context: Callable[..., BrowserContext],
     qa_profile: BrowserProfile,
     qa_config: QAConfig,
+) -> Callable[..., BrowserContext]:
+    """Create profile-sized contexts, optionally restoring ephemeral storage state."""
+
+    def create(**overrides: Any) -> BrowserContext:
+        options: dict[str, Any] = {
+            "viewport": {
+                "width": qa_profile.viewport.width,
+                "height": qa_profile.viewport.height,
+            },
+            "is_mobile": qa_profile.mobile,
+            "has_touch": qa_profile.mobile,
+        }
+        options.update(overrides)
+        context = new_context(**options)
+        if qa_config.security.sensitive_selectors:
+            context.add_init_script(
+                script=_sensitive_mask_script(qa_config.security.sensitive_selectors)
+            )
+        return context
+
+    return create
+
+
+@pytest.fixture
+def qa_page(
+    qa_context_factory: Callable[..., BrowserContext],
 ) -> Generator[Page, None, None]:
-    """Create a profile-sized page through pytest-playwright's managed context factory."""
-    context = new_context(
-        viewport={
-            "width": qa_profile.viewport.width,
-            "height": qa_profile.viewport.height,
-        },
-        is_mobile=qa_profile.mobile,
-        has_touch=qa_profile.mobile,
-    )
-    if qa_config.security.sensitive_selectors:
-        context.add_init_script(
-            script=_sensitive_mask_script(qa_config.security.sensitive_selectors)
-        )
-    yield context.new_page()
+    """Create a page through the reusable profile-aware context factory."""
+    yield qa_context_factory().new_page()
+
+
+@pytest.fixture(scope="session")
+def qa_session_store() -> Generator[SessionStateStore, None, None]:
+    """Provide auto-deleted storage state that never enters the audit directory."""
+    with TemporaryDirectory(prefix="ai-qa-session-") as directory:
+        yield SessionStateStore(directory)
 
 
 def _safe_test_name(nodeid: str) -> str:

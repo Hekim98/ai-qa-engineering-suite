@@ -52,6 +52,12 @@ outcomes by node ID, and produces a combined `audit.json`, evidence index, candi
 queue, and explicitly unverified draft reports. It never feeds candidate failures directly into
 launch-readiness scoring.
 
+Authenticated tests use a profile-aware browser-context factory. A session may be saved and
+restored through `SessionStateStore`, but its storage-state file lives in an owner-only operating-
+system temporary directory and is deleted at the end of the Pytest session. It never becomes an
+artifact. Named accounts are resolved once from environment variables and exposed to tests by
+logical role rather than secret value.
+
 An unreachable environment or HTTP 5xx during guarded navigation marks the run `incomplete`; it is not silently converted into a product defect.
 
 ## Configuration boundary
@@ -63,6 +69,10 @@ An unreachable environment or HTTP 5xx during guarded navigation marks the run `
 `configs/saucedemo.yaml` and `tests/saucedemo/` form the first client layer. Full readiness uses `standard_user`; the intentionally faulty `problem_user` is selected only by a dedicated `detection_demo` profile. Source classification keeps seeded demonstration findings out of readiness scoring.
 
 The external-site workflow uses `workflow_dispatch` only. Push and pull-request quality checks run local fixtures and framework tests without contacting SauceDemo.
+
+`configs/auth-sandbox.yaml` and `tests/auth_sandbox/` form the controlled authentication layer.
+Playwright intercepts its reserved `.test` origin and serves deterministic in-browser pages, so
+the multi-browser audit exercises sessions and role boundaries without external network access.
 
 ## Report data contract
 

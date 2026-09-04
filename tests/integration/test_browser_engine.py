@@ -115,3 +115,39 @@ critical_flows:
     assert outputs.audit_json.is_file()
     assert outputs.html_report.is_file()
     assert outputs.pdf_report.is_file()
+
+
+@pytest.mark.integration
+def test_authenticated_sandbox_audit_restores_sessions_without_leaking_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repository_root = Path.cwd()
+    config_path = repository_root / "configs/auth-sandbox.yaml"
+    secrets = {
+        "AUTH_SANDBOX_MEMBER_USERNAME": "member@example.test",
+        "AUTH_SANDBOX_MEMBER_PASSWORD": "member-pass",
+        "AUTH_SANDBOX_ADMIN_USERNAME": "admin@example.test",
+        "AUTH_SANDBOX_ADMIN_PASSWORD": "admin-pass",
+        "AUTH_SANDBOX_LOCKED_USERNAME": "locked@example.test",
+        "AUTH_SANDBOX_LOCKED_PASSWORD": "locked-pass",
+    }
+    for name, value in secrets.items():
+        monkeypatch.setenv(name, value)
+
+    outputs = run_audit(
+        config_path,
+        profile_names=["desktop-chromium"],
+        repository_root=repository_root,
+    )
+
+    assert outputs.audit.status is AuditStatus.PASSED
+    assert outputs.audit.total_tests == 5
+    assert outputs.audit.secret_preflight.account_names == ("default", "admin", "locked")
+    persisted_text = "\n".join(
+        path.read_text(encoding="utf-8", errors="ignore")
+        for path in outputs.audit_directory.rglob("*")
+        if path.is_file()
+    )
+    for secret in secrets.values():
+        assert secret not in persisted_text
+    assert not list(outputs.audit_directory.rglob("member.json"))

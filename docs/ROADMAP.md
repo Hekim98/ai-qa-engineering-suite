@@ -59,10 +59,13 @@ unverified findings, scores, or recommendations.
 
 ## Milestone 6 — Authenticated journeys and role coverage
 
-- [ ] Add reusable login/session-state helpers
-- [ ] Exercise default and named accounts in one controlled audit
-- [ ] Verify role boundaries, logout, expiration, and recovery paths
-- [ ] Demonstrate the capability against an authorized sandbox target
+- [x] Add reusable login/session-state helpers
+- [x] Exercise default and named accounts in one controlled audit
+- [x] Verify role boundaries, logout, expiration, and recovery paths
+- [x] Demonstrate the capability against a controlled local sandbox target
+
+Exit condition: a multi-browser audit proves authenticated and role-specific journeys while
+keeping credentials and restorable browser state outside generated evidence.
 
 ## Milestone 7 — Local audit dashboard
 

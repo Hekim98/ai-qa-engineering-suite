@@ -33,3 +33,6 @@ confirmed expected behavior, reproducibility, impact, and evidence.
 - Avoid copying production personal data into reports.
 - Keep generated artifacts out of Git by default.
 - Agree on retention and deletion expectations before a paid engagement.
+- Store restorable browser session state outside evidence directories with owner-only permissions,
+  and delete it automatically after the test session.
+- Use only explicitly authorized targets and dedicated synthetic or least-privilege accounts.

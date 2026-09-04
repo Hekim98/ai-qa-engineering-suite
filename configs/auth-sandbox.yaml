@@ -1,0 +1,77 @@
+project:
+  name: authenticated-role-sandbox
+  base_url: https://auth-sandbox.test
+  environment: controlled-local-sandbox
+  tests_path: tests/auth_sandbox
+
+credentials:
+  username_env: AUTH_SANDBOX_MEMBER_USERNAME
+  password_env: AUTH_SANDBOX_MEMBER_PASSWORD
+  accounts:
+    admin:
+      username_env: AUTH_SANDBOX_ADMIN_USERNAME
+      password_env: AUTH_SANDBOX_ADMIN_PASSWORD
+    locked:
+      username_env: AUTH_SANDBOX_LOCKED_USERNAME
+      password_env: AUTH_SANDBOX_LOCKED_PASSWORD
+
+browser:
+  profiles:
+    desktop-chromium:
+      engine: chromium
+      suite: full
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    mobile-chromium:
+      engine: chromium
+      suite: smoke
+      viewport:
+        width: 390
+        height: 844
+      mobile: true
+    desktop-firefox:
+      engine: firefox
+      suite: smoke
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+    desktop-webkit:
+      engine: webkit
+      suite: smoke
+      viewport:
+        width: 1440
+        height: 900
+      mobile: false
+
+artifacts:
+  root_dir: artifacts/runs
+  screenshot: on-failure
+  video: on-failure
+  trace: on-failure
+
+network:
+  capture_console_errors: true
+  capture_failed_requests: true
+  allowlist: []
+
+security:
+  sensitive_selectors:
+    - "#username"
+    - "#password"
+
+critical_flows:
+  - id: AUTH-001
+    name: Member can authenticate
+    description: A valid member reaches the authenticated dashboard.
+  - id: ROLE-001
+    name: Role boundaries are enforced
+    description: Members are denied admin access while administrators are admitted.
+  - id: SESSION-001
+    name: Session lifecycle is reliable
+    description: Session restoration, logout, and expiration behave predictably.
+  - id: RECOVERY-001
+    name: Recovery protects account privacy
+    description: Recovery gives the same response for known and unknown accounts.

@@ -18,7 +18,9 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 5 validates whether founders will pay for the service. The campaign uses a fixed-scope founding pilot, a public-source prospect list, measurable conversion thresholds, and an explicit approval gate before any external outreach.
+Milestone 6 adds authenticated journeys and role coverage. A controlled local browser sandbox
+proves login, session restoration, logout, expiration, recovery privacy, and authorization
+boundaries without contacting an external target or using customer data.
 
 ```text
 Core QA Engine
@@ -91,6 +93,21 @@ Each execution writes an ignored directory below `artifacts/runs/` containing lo
 
 The generic **Manual customer audit** GitHub Actions workflow can run a selected config without
 Codex or a local installation. It is manual-only, so pushes never contact configured targets.
+
+## Controlled authenticated audit
+
+The authentication sandbox provides a safe end-to-end example with fixed synthetic member,
+administrator, and locked accounts:
+
+```bash
+cp .env.example .env
+ai-qa audit configs/auth-sandbox.yaml
+```
+
+It runs the complete authenticated suite in desktop Chromium and critical smoke journeys in
+mobile Chromium, Firefox, and WebKit. Browser session state is held in an auto-deleted private
+temporary directory and never enters audit artifacts. See
+[Authenticated Journeys](docs/AUTHENTICATED_JOURNEYS.md).
 
 ## SauceDemo portfolio audit
 

@@ -137,6 +137,10 @@ For authenticated projects, the generic workflow exposes repository secrets name
 `AI_QA_USERNAME` and `AI_QA_PASSWORD`. The corresponding config must reference those names.
 Additional role secrets should be mapped explicitly in a reviewed workflow before use.
 
+For a safe working example, `configs/auth-sandbox.yaml` uses fixed synthetic accounts and an
+entirely intercepted `.test` origin. See [Authenticated Journeys](AUTHENTICATED_JOURNEYS.md) for
+the session-state lifecycle and adaptation boundary.
+
 ## Current boundary
 
 The orchestrator deliberately does not infer severity, category, expected behavior, business
