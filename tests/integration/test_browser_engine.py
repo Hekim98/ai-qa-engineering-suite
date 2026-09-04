@@ -1,9 +1,11 @@
+import time
 from pathlib import Path
 
 import pytest
 from playwright.sync_api import Playwright
 
 from ai_qa_engineering.audit_models import AuditStatus
+from ai_qa_engineering.dashboard import DashboardService
 from ai_qa_engineering.observability import BrowserObserver
 from ai_qa_engineering.orchestration import run_audit
 from ai_qa_engineering.results import RunStatus
@@ -122,7 +124,6 @@ def test_authenticated_sandbox_audit_restores_sessions_without_leaking_secrets(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     repository_root = Path.cwd()
-    config_path = repository_root / "configs/auth-sandbox.yaml"
     secrets = {
         "AUTH_SANDBOX_MEMBER_USERNAME": "member@example.test",
         "AUTH_SANDBOX_MEMBER_PASSWORD": "member-pass",
@@ -134,20 +135,29 @@ def test_authenticated_sandbox_audit_restores_sessions_without_leaking_secrets(
     for name, value in secrets.items():
         monkeypatch.setenv(name, value)
 
-    outputs = run_audit(
-        config_path,
-        profile_names=["desktop-chromium"],
-        repository_root=repository_root,
-    )
+    dashboard = DashboardService(repository_root)
+    dashboard.start_audit("configs/auth-sandbox.yaml", ["desktop-chromium"])
+    for _ in range(600):
+        job = dashboard.list_jobs()[0]
+        if job["status"] in {"completed", "failed"}:
+            break
+        time.sleep(0.05)
 
-    assert outputs.audit.status is AuditStatus.PASSED
-    assert outputs.audit.total_tests == 5
-    assert outputs.audit.secret_preflight.account_names == ("default", "admin", "locked")
+    assert job["status"] == "completed"
+    audit_id = str(job["audit_id"])
+    detail = dashboard.audit_detail(audit_id)
+    audit = detail["audit"]
+    assert isinstance(audit, dict)
+    assert audit["status"] == AuditStatus.PASSED
+    assert audit["total_tests"] == 5
+    assert audit["secret_preflight"]["account_names"] == ["default", "admin", "locked"]
+    assert detail["review"]["report_gate"] == "open"
+    audit_directory = repository_root / "artifacts/audits" / audit_id
     persisted_text = "\n".join(
         path.read_text(encoding="utf-8", errors="ignore")
-        for path in outputs.audit_directory.rglob("*")
+        for path in audit_directory.rglob("*")
         if path.is_file()
     )
     for secret in secrets.values():
         assert secret not in persisted_text
-    assert not list(outputs.audit_directory.rglob("member.json"))
+    assert not list(audit_directory.rglob("member.json"))

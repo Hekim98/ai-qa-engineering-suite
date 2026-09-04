@@ -18,9 +18,8 @@ The first client-facing deliverable will include:
 
 ## Current milestone
 
-Milestone 6 adds authenticated journeys and role coverage. A controlled local browser sandbox
-proves login, session restoration, logout, expiration, recovery privacy, and authorization
-boundaries without contacting an external target or using customer data.
+Milestone 7 adds AI QA Control Room: a localhost-only dashboard for starting audits, inspecting
+browser evidence, and recording human decisions without running each audit from the terminal.
 
 ```text
 Core QA Engine
@@ -93,6 +92,19 @@ Each execution writes an ignored directory below `artifacts/runs/` containing lo
 
 The generic **Manual customer audit** GitHub Actions workflow can run a selected config without
 Codex or a local installation. It is manual-only, so pushes never contact configured targets.
+
+## Local audit dashboard
+
+Start the private local interface:
+
+```bash
+ai-qa dashboard
+```
+
+Choose a configuration and browser profiles, start one background audit, inspect its profile
+attempts and evidence, then confirm or reject every automated candidate. Review decisions survive
+dashboard restarts in the ignored audit package. The report-preparation gate never opens for an
+incomplete audit or while a candidate is undecided. See [Local Audit Dashboard](docs/LOCAL_DASHBOARD.md).
 
 ## Controlled authenticated audit
 

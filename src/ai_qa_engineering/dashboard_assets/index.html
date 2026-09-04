@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Run and review AI QA Engineering Suite audits locally.">
+  <meta name="ai-qa-token" content="__AI_QA_TOKEN__">
+  <title>AI QA Control Room</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="AI QA Control Room home">
+      <span class="brand-mark">AQ</span>
+      <span><strong>AI QA</strong><small>Control Room</small></span>
+    </a>
+    <div class="local-badge"><span></span> Local workspace</div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">LAUNCH CONFIDENCE, MADE VISIBLE</p>
+        <h1>Run the audit.<br><em>Review the evidence.</em></h1>
+        <p class="intro">One private workspace for browser coverage, failure evidence, and human verification.</p>
+      </div>
+      <div class="hero-stat"><strong id="audit-count">0</strong><span>local audits</span></div>
+    </section>
+
+    <section class="workspace-grid">
+      <aside class="panel launch-panel">
+        <div class="panel-heading"><span>01</span><h2>Start an audit</h2></div>
+        <label for="config-select">Project configuration</label>
+        <select id="config-select" aria-describedby="config-help">
+          <option>Loading configurations…</option>
+        </select>
+        <p id="config-help" class="muted">Your saved project definitions appear here.</p>
+        <fieldset id="profiles"><legend>Browser coverage</legend></fieldset>
+        <button id="run-audit" class="primary" type="button">Run complete audit</button>
+        <div id="job-state" class="job-state" aria-live="polite"></div>
+        <p class="privacy-note">Runs only on this computer. Credentials are never shown here.</p>
+      </aside>
+
+      <section class="panel activity-panel">
+        <div class="panel-heading"><span>02</span><h2>Audit activity</h2></div>
+        <div class="metric-row">
+          <article><small>Latest status</small><strong id="latest-status">—</strong></article>
+          <article><small>Tests passed</small><strong id="latest-passed">—</strong></article>
+          <article><small>Needs review</small><strong id="latest-review">—</strong></article>
+        </div>
+        <div class="section-heading"><h3>Recent audits</h3><span>Latest 20</span></div>
+        <div id="audit-list" class="audit-list" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section class="panel review-panel">
+      <div class="panel-heading"><span>03</span><h2>Human review</h2></div>
+      <div class="review-empty" id="review-empty">
+        <p class="eyebrow">EVIDENCE BEFORE OPINION</p>
+        <h3>Select an audit to inspect profiles, evidence, and candidate findings.</h3>
+        <p>Automation can raise a candidate. Only your review can confirm or reject it.</p>
+      </div>
+      <div id="review-detail" hidden></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <footer><span>AI QA Engineering Suite</span><span>Human-verified by design</span></footer>
+</body>
+</html>

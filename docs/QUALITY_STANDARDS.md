@@ -36,3 +36,7 @@ confirmed expected behavior, reproducibility, impact, and evidence.
 - Store restorable browser session state outside evidence directories with owner-only permissions,
   and delete it automatically after the test session.
 - Use only explicitly authorized targets and dedicated synthetic or least-privilege accounts.
+- Bind local operator interfaces to loopback, reject non-local hosts, and token-protect every
+  state-changing request.
+- Treat captured HTML and logs as untrusted evidence; never execute them inside a privileged
+  review origin.

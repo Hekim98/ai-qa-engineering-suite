@@ -132,3 +132,20 @@ def test_audit_command_prints_combined_summary_and_review_exit_code(
     assert '"status": "needs-review"' in output.out
     assert '"candidate_findings": 1' in output.out
     assert '"score": null' in output.out
+
+
+@pytest.mark.unit
+def test_dashboard_command_starts_local_control_room(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    called: dict[str, object] = {}
+
+    def fake_dashboard(**kwargs: object) -> None:
+        called.update(kwargs)
+
+    monkeypatch.setattr("ai_qa_engineering.cli.serve_dashboard", fake_dashboard)
+
+    exit_code = main(["dashboard", "--port", "9123", "--no-open"])
+
+    assert exit_code == 0
+    assert called == {"port": 9123, "open_browser": False}

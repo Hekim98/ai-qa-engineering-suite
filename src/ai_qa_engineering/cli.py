@@ -10,6 +10,7 @@ from pathlib import Path
 
 from ai_qa_engineering.audit_models import AuditStatus
 from ai_qa_engineering.config import ConfigError, QAConfig, load_config
+from ai_qa_engineering.dashboard import serve_dashboard
 from ai_qa_engineering.orchestration import run_audit
 from ai_qa_engineering.reporting import generate_report_outputs
 from ai_qa_engineering.reporting.loader import ReportInputError
@@ -50,6 +51,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     report_parser.add_argument("run_directory", type=Path)
     report_parser.add_argument("--findings", type=Path, required=True)
+
+    dashboard_parser = subparsers.add_parser(
+        "dashboard", description="Open the local audit and human-review control room"
+    )
+    dashboard_parser.add_argument("--port", type=int, default=8765)
+    dashboard_parser.add_argument(
+        "--no-open",
+        action="store_false",
+        dest="open_browser",
+        help="Start the local dashboard without opening a browser window",
+    )
     return parser
 
 
@@ -140,6 +152,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             "pdf": str(report_outputs.pdf_path),
         }
         print(json.dumps(report_payload, indent=2))
+        return 0
+
+    if args.command == "dashboard":
+        try:
+            serve_dashboard(port=args.port, open_browser=args.open_browser)
+        except (OSError, ValueError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
         return 0
 
     parser.error(f"Unsupported command: {args.command}")

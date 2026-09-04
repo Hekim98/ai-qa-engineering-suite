@@ -69,9 +69,19 @@ keeping credentials and restorable browser state outside generated evidence.
 
 ## Milestone 7 — Local audit dashboard
 
-- [ ] Start audits without terminal commands
-- [ ] Review profile status, evidence, candidate findings, and flaky tests
-- [ ] Confirm or reject findings before final report generation
+- [x] Start audits without terminal commands
+- [x] Review profile status, evidence, candidate findings, and flaky tests
+- [x] Confirm or reject findings before final report preparation
+- [x] Restrict the interface to safe localhost and allowlisted evidence paths
+
+Exit condition: a non-technical local workflow can execute one configured audit at a time and
+preserve explicit human decisions before verified report preparation.
+
+## Milestone 8 — Verified report workspace
+
+- [ ] Collect critical-flow and category assessments in the dashboard
+- [ ] Convert confirmed candidates into complete verified findings
+- [ ] Generate and visually validate final HTML/PDF reports from the same review workspace
 
 ## Deferred market validation
 

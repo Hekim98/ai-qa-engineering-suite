@@ -60,6 +60,23 @@ logical role rather than secret value.
 
 An unreachable environment or HTTP 5xx during guarded navigation marks the run `incomplete`; it is not silently converted into a product defect.
 
+## Local review interface
+
+`ai-qa dashboard` adds a presentation layer over the same configuration and orchestration APIs.
+It runs one audit at a time in a background thread, discovers completed immutable packages from
+configured audit roots, and stores human review decisions beside the selected ignored package.
+The dashboard does not invoke a second browser runner or modify automation results.
+
+The HTTP service binds only to loopback. A random request token protects mutations; Host-header
+validation, restrictive response headers, config discovery boundaries, and evidence allowlisting
+reduce exposure to local browser attacks and path traversal. Captured HTML and structured logs are
+served as inert text rather than executable same-origin content.
+
+Candidate confirmation requires severity, category, steps, expected and actual behavior, and a
+recommendation. Rejection requires a rationale. Incomplete audits and undecided candidates keep
+the report-preparation gate closed. Final scoring still consumes the stricter report data contract
+below.
+
 ## Configuration boundary
 
 `configs/example.yaml` documents the first public configuration contract. Pydantic rejects unknown or invalid input before any test run starts. Configuration stores only the names of credential environment variables; their values come from the process environment or an ignored local `.env` file.

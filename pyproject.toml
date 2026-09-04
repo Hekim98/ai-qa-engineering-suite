@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-qa-engineering-suite"
-version = "0.3.0"
+version = "0.4.0"
 description = "Reusable quality-engineering foundations for AI-built software."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -45,6 +45,9 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+ai_qa_engineering = ["dashboard_assets/*.html", "dashboard_assets/*.css", "dashboard_assets/*.js"]
 
 [tool.pytest.ini_options]
 addopts = [
